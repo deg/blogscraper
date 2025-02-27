@@ -88,6 +88,12 @@ coverage:
 	poetry run pytest --cov=. --cov-report=term-missing --cov-fail-under=80
 
 
+# Generate an LLM-ready copy of this repo
+.PHONY: as-llm-input
+as-llm-input:
+	poetry run gitingest -o dev-docs/blogscraper-digest.txt -e dev-docs
+
+
 # Run the application
 .PHONY: run
 run:
