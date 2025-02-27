@@ -1,9 +1,12 @@
+from blogscraper.types import URLDict
+
+
 def main() -> None:
     # Call run_scrapers with test_mode set to False
     run_scrapers(test_mode=False)
 
 
-def run_scrapers(test_mode: bool):
+def run_scrapers(test_mode: bool) -> list[URLDict]:
     """
     Runs the scrapers in either test or normal mode.
 
@@ -11,7 +14,7 @@ def run_scrapers(test_mode: bool):
         test_mode (bool): If True, runs in test mode; otherwise, runs in normal mode.
 
     Returns:
-        list: A placeholder list of URLs.
+        list[URLDict]: A placeholder list of URLs.
     """
     if test_mode:
         print("Running scrapers in test mode")

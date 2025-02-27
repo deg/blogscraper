@@ -1,8 +1,10 @@
 import json
 import os
 
+from blogscraper.types import URLDict
 
-def load_stored_urls():
+
+def load_stored_urls() -> list[URLDict]:
     file_path = os.path.join("data", "urls.json")
 
     if not os.path.exists(file_path):
@@ -19,23 +21,25 @@ def load_stored_urls():
     return []
 
 
-def save_stored_urls(urls_list: list[dict]):
+def save_stored_urls(urls_list: list[URLDict]) -> None:
     file_path = os.path.join("data", "urls.json")
 
     with open(file_path, "w") as file:
         json.dump(urls_list, file, indent=4)
 
 
-def deduplicate_urls(new_urls: list[dict], existing_urls: list[dict]) -> list[dict]:
+def deduplicate_urls(
+    new_urls: list[URLDict], existing_urls: list[URLDict]
+) -> list[URLDict]:
     """
     Returns a list of URLs from new_urls that are not present in existing_urls.
 
     Args:
-        new_urls (list[dict]): A list of dictionaries, each with a "url" key.
-        existing_urls (list[dict]): A list of dictionaries, each with a "url" key.
+        new_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
+        existing_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
 
     Returns:
-        list[dict]: A list of dictionaries from new_urls with unique "url" values not
+        list[URLDict]: A list of dictionaries from new_urls with unique "url" values not
                     found in existing_urls.
     """
     existing_urls_set = {url_dict["url"] for url_dict in existing_urls}
