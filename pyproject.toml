@@ -1,0 +1,49 @@
+[project]
+name = "blogscraper"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "David Goldfarb",email = "deg@degel.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "1.15.0"
+pre-commit = "4.1.0"
+pyright = "1.1.395"
+pytest = "8.3.4"
+pytest-cov = "6.0.0"
+ruff = "0.9.8"
+black = "25.1.0"
+ipython = "8.32.0"
+
+
+[tool.poetry.scripts]
+blogscraper = "src.blogscraper.main:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203"]
+
+[tool.mypy]
+strict = true
+
+[tool.pytest]
+minversion = "6.0"
+addopts = "-ra -q --cov=."
+testpaths = ["tests"]
