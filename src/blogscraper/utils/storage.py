@@ -17,3 +17,10 @@ def load_stored_urls():
             pass
 
     return []
+
+
+def save_stored_urls(urls_list: list[dict]):
+    file_path = os.path.join("data", "urls.json")
+
+    with open(file_path, "w") as file:
+        json.dump(urls_list, file, indent=4)
