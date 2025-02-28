@@ -19,17 +19,16 @@ def scrape_simonwillison() -> list[URLDict]:
 
     # Find all blog post links
     links = soup.select("article h2 a")
-    urls = []
+    urls: list[URLDict] = []
 
     for link in links:
         href = link.get("href")
-        if href:
-            urls.append(
-                {
-                    "url": href,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "source": "simonwillison",
-                }
-            )
+        if isinstance(href, str):
+            url_dict: URLDict = {
+                "url": href,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "source": "simonwillison",
+            }
+            urls.append(url_dict)
 
     return urls

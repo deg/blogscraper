@@ -1,4 +1,5 @@
 import argparse
+import json
 
 from blogscraper.scrapers.simonwillison import scrape_simonwillison
 from blogscraper.scrapers.thezvi import scrape_thezvi
@@ -24,14 +25,10 @@ def main() -> None:
     test_mode = args.test
 
     # Call run_scrapers with the determined test_mode
-    urls = run_scrapers(test_mode=test_mode)
-
-    # If in test mode, print the returned URLs
-    if test_mode:
-        print("Test mode URLs:", urls)
+    run_scrapers(test_mode=test_mode)
 
 
-def run_scrapers(test_mode: bool) -> list[URLDict]:
+def run_scrapers(test_mode: bool) -> dict[str, list[URLDict]]:
     """
     Runs the scrapers in either test or normal mode.
 
@@ -39,7 +36,7 @@ def run_scrapers(test_mode: bool) -> list[URLDict]:
         test_mode (bool): If True, runs in test mode; otherwise, runs in normal mode.
 
     Returns:
-        list[URLDict]: A list of new URLs.
+        dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
     """
     # Load existing URLs from urls.json
     existing_urls = load_stored_urls()
@@ -54,14 +51,18 @@ def run_scrapers(test_mode: bool) -> list[URLDict]:
     if test_mode:
         print("Running scrapers in test mode")
         # Print the new URLs instead of saving them
-        print("New URLs:", all_new_urls)
+        print("New URLs:", json.dumps(all_new_urls, indent=2))
+        return {"all_new_urls": all_new_urls}
     else:
         print("Running scrapers in normal mode")
         # Deduplicate and save new URLs
         unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
         save_stored_urls(existing_urls + unique_new_urls)
-
-    return all_new_urls
+        return {
+            "all_new_urls": all_new_urls,
+            "unique_new_urls": unique_new_urls,
+            "existing_urls": existing_urls,
+        }
 
 
 if __name__ == "__main__":  # pragma: no cover

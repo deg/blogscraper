@@ -19,17 +19,16 @@ def scrape_thezvi() -> list[URLDict]:
 
     # Find all blog post links
     links = soup.select("h2 a")
-    urls = []
+    urls: list[URLDict] = []
 
     for link in links:
         href = link.get("href")
-        if href:
-            urls.append(
-                {
-                    "url": href,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "source": "thezvi",
-                }
-            )
+        if isinstance(href, str):
+            url_dict: URLDict = {
+                "url": href,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "source": "thezvi",
+            }
+            urls.append(url_dict)
 
     return urls
