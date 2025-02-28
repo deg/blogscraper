@@ -18,7 +18,7 @@ def scrape_thezvi() -> list[URLDict]:
     soup = BeautifulSoup(response.content, "html.parser")
 
     # Find all blog post links
-    links = soup.select("article h2 a")
+    links = soup.select("h2 a")
     urls = []
 
     for link in links:
