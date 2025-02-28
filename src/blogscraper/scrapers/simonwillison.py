@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -27,7 +27,7 @@ def scrape_simonwillison() -> list[URLDict]:
             urls.append(
                 {
                     "url": href,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "source": "simonwillison",
                 }
             )
