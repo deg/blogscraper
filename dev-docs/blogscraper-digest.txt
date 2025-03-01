@@ -1,0 +1,339 @@
+Directory structure:
+└── blogscraper/
+    ├── README.md
+    ├── LICENSE
+    ├── Makefile
+    ├── pyproject.toml
+    ├── .pre-commit-config.yaml
+    ├── src/
+    │   └── blogscraper/
+    │       ├── __init__.py
+    │       ├── main.py
+    │       └── utils/
+    │           ├── __init__.py
+    │           └── helpers.py
+    ├── tests/
+    │   ├── test_helpers.py
+    │   └── test_main.py
+    └── .github/
+        └── workflows/
+            └── ci.yml
+
+================================================
+File: README.md
+================================================
+# blogscraper
+
+
+================================================
+File: LICENSE
+================================================
+MIT License
+
+Copyright (c) 2025 David Goldfarb <deg@degel.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this
+software and associated documentation files (the "Software"), to deal in the Software
+without restriction, including without limitation the rights to use, copy, modify,
+merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+
+================================================
+File: Makefile
+================================================
+# Use Bash for shell commands
+SHELL := /bin/bash
+
+# Project Name
+PROJECT_NAME := "blogscraper"
+
+.DEFAULT_GOAL := help
+
+# Show this help message
+.PHONY: help
+help:
+	@echo -e "\033[1;34mUsage:\033[0m make [target]"
+	@echo ""
+	@echo -e "\033[1;36mTargets:\033[0m"
+	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
+	    helpMessage = match(lastComment, /^# (.*)/); \
+	    helpCommand = $$1; sub(/:$$/, "", helpCommand); \
+	    if (helpMessage) { \
+	        printf "  \033[1;32m%-20s\033[0m \033[0;37m%s\033[0m\n", helpCommand, substr(lastComment, RSTART + 2, RLENGTH - 2); \
+	    } else { \
+	        printf "  \033[1;32m%-20s\033[0m \033[0;33m??? [No description]\033[0m\n", helpCommand; \
+	    } \
+	    lastComment = ""; \
+	} \
+	/^# / { \
+	    lastComment = $$0; \
+	} \
+	/^\.PHONY:/ { \
+	    next; \
+	}' $(MAKEFILE_LIST) | sort
+	@echo ""
+
+
+# Setup the development environment
+.PHONY: setup-dev-env
+setup-dev-env: update install lint
+	@echo "🚀 Setting up Git hooks..."
+	poetry run pre-commit install
+	@if [ -f .git/hooks/pre-commit ]; then chmod +x .git/hooks/pre-commit; fi
+	@echo "✅ Development environment is ready!"
+
+
+# Sync dependencies, updating poetry.lock and .venv
+.PHONY: update
+update:
+	poetry update
+
+
+# Install dependencies from poetry.lock
+.PHONY: install
+install:
+	poetry install
+
+
+# List all outdated dependencies (direct dependencies only)
+.PHONY: outdated
+outdated:
+	poetry show --outdated --top-level
+
+
+# List all outdated dependencies (including transitive dependencies)
+.PHONY: outdated-all
+outdated-all:
+	poetry show --outdated
+
+
+# Lint all files (fails on errors)
+.PHONY: lint
+lint:
+	@echo "🔍 Running Ruff..."
+	@poetry run ruff check . || lint_failed=1
+	@echo "🔍 Running Pyright..."
+	@poetry run pyright . || lint_failed=1
+	@echo "🔍 Running Mypy..."
+	@poetry run mypy . || lint_failed=1
+	@exit $${lint_failed:-0}
+
+
+# Run tests
+.PHONY: test
+test:
+	poetry run pytest --maxfail=1 --disable-warnings
+
+
+# Run test coverage (with 80% minimum threshold)
+.PHONY: coverage
+coverage:
+	poetry run pytest --cov=. --cov-report=term-missing --cov-fail-under=80
+
+
+# Generate an LLM-ready copy of this repo
+.PHONY: as-llm-input
+as-llm-input:
+	poetry run gitingest -o dev-docs/blogscraper-digest.txt -e dev-docs
+
+
+# Run the application
+.PHONY: run
+run:
+	@echo "🚀 Running the application..."
+	poetry run python -m blogscraper.main
+
+
+# Debug the application with PDB
+.PHONY: debug
+debug:
+	@echo "🐞 Running the application in debug mode..."
+	poetry run python -m pdb -m blogscraper.main
+
+
+================================================
+File: pyproject.toml
+================================================
+[project]
+name = "blogscraper"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "David Goldfarb",email = "deg@degel.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<4.0"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "1.15.0"
+pre-commit = "4.1.0"
+pyright = "1.1.395"
+pytest = "8.3.4"
+pytest-cov = "6.0.0"
+ruff = "0.9.8"
+black = "25.1.0"
+ipython = "8.32.0"
+gitingest = "0.1.3"
+
+
+[tool.poetry.scripts]
+blogscraper = "src.blogscraper.main:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203"]
+
+[tool.mypy]
+strict = true
+
+[tool.pytest]
+minversion = "6.0"
+addopts = "-ra -q --cov=."
+testpaths = ["tests"]
+
+
+================================================
+File: .pre-commit-config.yaml
+================================================
+repos:
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+
+
+================================================
+File: src/blogscraper/__init__.py
+================================================
+# This file is intentionally left blank.
+
+
+================================================
+File: src/blogscraper/main.py
+================================================
+from blogscraper.utils.helpers import greet
+
+
+def main() -> None:
+    name = "World"
+    message = greet(name)
+    print(message)  # "Hello, World!"
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
+
+
+================================================
+File: src/blogscraper/utils/__init__.py
+================================================
+# This file is intentionally left blank.
+
+
+================================================
+File: src/blogscraper/utils/helpers.py
+================================================
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+
+================================================
+File: tests/test_helpers.py
+================================================
+from blogscraper.utils.helpers import greet
+
+
+def test_greet() -> None:
+    assert greet("Alice") == "Hello, Alice!"
+    assert greet("Bob") == "Hello, Bob!"
+
+
+================================================
+File: tests/test_main.py
+================================================
+from pytest import CaptureFixture
+
+from blogscraper.main import main
+
+
+def test_example() -> None:
+    assert 1 + 1 == 2
+
+
+def test_main(capsys: CaptureFixture[str]) -> None:
+    main()
+    captured = capsys.readouterr()
+    assert "Hello, World!" in captured.out
+
+
+================================================
+File: .github/workflows/ci.yml
+================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+      - name: Run linters
+        run: |
+          poetry run black --check .
+          poetry run isort --check-only .
+          poetry run flake8 .
+          poetry run mypy .
+      - name: Run tests with coverage
+        run: |
+          poetry run pytest --cov=.
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+
+
