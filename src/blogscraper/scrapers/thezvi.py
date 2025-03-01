@@ -26,7 +26,7 @@ def scrape_thezvi() -> list[URLDict]:
         if isinstance(href, str):
             url_dict: URLDict = {
                 "url": href,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "harvest_timestamp": datetime.now(timezone.utc).isoformat(),
                 "source": "thezvi",
             }
             urls.append(url_dict)
