@@ -1,4 +1,5 @@
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 import requests
@@ -7,6 +8,9 @@ from bs4 import BeautifulSoup
 from blogscraper.types import URLDict
 from blogscraper.utils.scraper_utils import fetch_and_parse_urls
 from blogscraper.utils.url_utils import normalize_url
+
+# Define a constant for the number of threads
+MAX_WORKERS = 5
 
 
 def extract_thezvi_date(url: str) -> str:
@@ -44,19 +48,29 @@ def scrape_thezvi() -> list[URLDict]:
 
     if search_section:
         links = search_section.select("a")
-        for link in links:
-            href = link.get("href")
-            if isinstance(href, str):
-                absolute_url = normalize_url(base_url, href)
-                # Scrape each additional URL found
-                additional_urls.extend(
-                    fetch_and_parse_urls(
-                        base_url=absolute_url,
-                        selector=selector,
-                        source=source,
-                        date_extractor=extract_thezvi_date,
-                    )
-                )
+        archive_urls = [
+            normalize_url(base_url, link.get("href"))
+            for link in links
+            if isinstance(link.get("href"), str)
+        ]
+
+        # Use ThreadPoolExecutor to fetch archive pages in parallel
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            future_to_url = {
+                executor.submit(
+                    fetch_and_parse_urls,
+                    base_url=url,
+                    selector=selector,
+                    source=source,
+                    date_extractor=extract_thezvi_date,
+                ): url
+                for url in archive_urls
+            }
+            for future in as_completed(future_to_url):
+                try:
+                    additional_urls.extend(future.result())
+                except Exception as e:
+                    print(f"Error fetching {future_to_url[future]}: {e}")
 
     # Combine main page URLs with additional URLs
     return main_page_urls + additional_urls
