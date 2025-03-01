@@ -34,3 +34,5 @@ Thumbs.db
 
 # DeepFace Cached Models
 # ~/.deepface/
+
+data/urls.json

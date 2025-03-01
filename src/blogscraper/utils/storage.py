@@ -22,8 +22,9 @@ def load_stored_urls() -> list[URLDict]:
 
 
 def save_stored_urls(urls_list: list[URLDict]) -> None:
-    file_path = os.path.join("data", "urls.json")
-
+    directory = "data"
+    file_path = os.path.join(directory, "urls.json")
+    os.makedirs(directory, exist_ok=True)
     with open(file_path, "w") as file:
         json.dump(urls_list, file, indent=4)
 
