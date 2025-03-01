@@ -23,6 +23,7 @@ def fetch_and_parse_urls(
     Returns:
         List[URLDict]: A list of URLDict objects with absolute URLs.
     """
+    print(f"Fetching and parsing URLs from {base_url}")
     response = requests.get(base_url)
     soup = BeautifulSoup(response.content, "html.parser")
 
