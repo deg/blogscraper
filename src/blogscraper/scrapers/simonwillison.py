@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from blogscraper.types import URLDict
 from blogscraper.utils.scraper_utils import fetch_and_parse_urls
@@ -10,8 +10,9 @@ def extract_simonwillison_date(url: str) -> str:
     if match:
         year, month_str, day = match.groups()
         month = datetime.strptime(month_str, "%b").month
-        return datetime(int(year), month, int(day)).isoformat()
-    return ""
+        dt_utc = datetime(int(year), month, int(day), tzinfo=timezone.utc)
+        return dt_utc.strftime("%Y-%m-%dT%H:%M:%S%z")
+    return "unknown"
 
 
 def scrape_simonwillison() -> list[URLDict]:

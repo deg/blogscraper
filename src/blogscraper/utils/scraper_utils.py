@@ -37,7 +37,9 @@ def fetch_and_parse_urls(
             creation_date = date_extractor(absolute_url)
             url_dict: URLDict = {
                 "url": absolute_url,
-                "harvest_timestamp": datetime.now(timezone.utc).isoformat(),
+                "harvest_timestamp": datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%dT%H:%M:%S%z"
+                ),
                 "source": source,
                 "creation_date": creation_date,
             }

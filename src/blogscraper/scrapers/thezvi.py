@@ -1,6 +1,6 @@
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -17,8 +17,9 @@ def extract_thezvi_date(url: str) -> str:
     match = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", url)
     if match:
         year, month, day = match.groups()
-        return datetime(int(year), int(month), int(day)).isoformat()
-    return ""
+        dt_utc = datetime(int(year), int(month), int(day), tzinfo=timezone.utc)
+        return dt_utc.strftime("%Y-%m-%dT%H:%M:%S%z")
+    return "unknown"
 
 
 def scrape_thezvi() -> list[URLDict]:
