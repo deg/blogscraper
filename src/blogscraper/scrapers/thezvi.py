@@ -50,9 +50,10 @@ def scrape_thezvi() -> list[URLDict]:
     if search_section:
         links = search_section.select("a")
         archive_urls = [
-            normalize_url(base_url, link.get("href"))
+            normalize_url(base_url, href)
             for link in links
-            if isinstance(link.get("href"), str)
+            for href in [link.get("href")]
+            if isinstance(href, str)
         ]
 
         # Use ThreadPoolExecutor to fetch archive pages in parallel
