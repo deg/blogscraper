@@ -1,40 +1,37 @@
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [project]
 name = "blogscraper"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "David Goldfarb",email = "deg@degel.com"}
+  { name = "David Goldfarb", email = "deg@degel.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
+  "requests==2.32.3",
+  "beautifulsoup4==4.11.1"
 ]
 
+[project.optional-dependencies]
+dev = [
+  "mypy==1.15.0",
+  "pre-commit==4.1.0",
+  "pyright==1.1.396",
+  "pytest==8.3.5",
+  "pytest-cov==6.0.0",
+  "ruff==0.9.9",
+  "black==25.1.0",
+  "ipython==9.0.0",
+  "gitingest==0.1.3",
+  "types-requests==2.32.0.20241016",
+  "types-beautifulsoup4==4.12.0.20250204"
+]
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-
-[tool.poetry.dependencies]
-requests = "2.32.3"
-beautifulsoup4 = "4.11.1"
-
-[tool.poetry.group.dev.dependencies]
-mypy = "1.15.0"
-pre-commit = "4.1.0"
-pyright = "1.1.395"
-pytest = "8.3.4"
-pytest-cov = "6.0.0"
-ruff = "0.9.8"
-black = "25.1.0"
-ipython = "8.32.0"
-gitingest = "0.1.3"
-types-requests = "2.32.0.20241016"
-types-beautifulsoup4 = "4.12.0.20250204"
-
-
-[tool.poetry.scripts]
+[project.scripts]
 blogscraper = "src.blogscraper.main:main"
 
 [tool.black]
