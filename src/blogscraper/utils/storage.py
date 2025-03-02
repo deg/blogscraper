@@ -44,6 +44,14 @@ def deduplicate_urls(
                     found in existing_urls.
     """
     existing_urls_set = {url_dict["url"] for url_dict in existing_urls}
-    return [
-        url_dict for url_dict in new_urls if url_dict["url"] not in existing_urls_set
-    ]
+    seen_urls = set()
+    unique_new_urls = []
+
+    for url_dict in new_urls:
+        url = url_dict["url"]
+        if url not in seen_urls and url not in existing_urls_set:
+            seen_urls.add(url)
+            print(f"Adding {url}")
+            unique_new_urls.append(url_dict)
+
+    return unique_new_urls
