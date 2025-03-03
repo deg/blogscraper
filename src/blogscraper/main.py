@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime, timedelta, timezone
 
 from blogscraper.scrapers.simonwillison import scrape_simonwillison
 from blogscraper.scrapers.thezvi import scrape_thezvi
@@ -14,26 +15,61 @@ def main() -> None:
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Run the blog scrapers.")
     parser.add_argument(
-        "--test",
+        "--lookback",
+        type=int,
+        help="Print URLs collected within the last N days",
+    )
+    parser.add_argument(
+        "--scrape",
         action="store_true",
-        help="Run scrapers in test mode",
+        default=True,
+        help="Run scrapers to collect new URLs (default: True)",
+    )
+    parser.add_argument(
+        "--no-scrape",
+        dest="scrape",
+        action="store_false",
+        help="Do not run scrapers to collect new URLs",
     )
     args = parser.parse_args()
 
-    # Determine the mode based on the --test flag
-    test_mode = args.test
-    if test_mode:
-        print("Test mode NYI")
+    # Run scrapers and process URLs if --scrape is true
+    if args.scrape:
+        results = run_scrapers()
+    else:
+        results = {"existing_urls": load_stored_urls()}
 
-    run_scrapers()
+    # Handle the --lookback flag
+    if args.lookback is not None:
+        relevant = recent_urls(results["existing_urls"], args.lookback)
+        print(f"URLs collected in the last {args.lookback} days:")
+        for url_dict in relevant:
+            print(url_dict["url"])
+
+
+def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
+    """
+    Prints URLs that were collected within the last 'lookback_days' days.
+
+    Args:
+        existing_urls (list[URLDict]): List of existing URLs.
+        lookback_days (int): Number of days to look back.
+    """
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    recent_urls = [
+        url_dict
+        for url_dict in urls
+        if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
+    ]
+
+    # Sort the URLs by creation_date, earliest first
+    recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return recent_urls
 
 
 def run_scrapers() -> dict[str, list[URLDict]]:
     """
-    Runs the scrapers in either test or normal mode.
-
-    Args:
-        test_mode (bool): If True, runs in test mode; otherwise, runs in normal mode.
+    Scrape blog entries from interesting sites.
 
     Returns:
         dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
@@ -50,7 +86,6 @@ def run_scrapers() -> dict[str, list[URLDict]]:
 
     # Deduplicate and save new URLs
     unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
-    print(f"Added URLs: {unique_new_urls}")
     save_stored_urls(existing_urls + unique_new_urls)
     return {
         "all_new_urls": all_new_urls,
