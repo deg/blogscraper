@@ -13,7 +13,9 @@ readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
   "requests==2.32.3",
-  "beautifulsoup4==4.11.1"
+  "beautifulsoup4==4.11.1",
+  "questionary==2.1.0",
+  "rich==13.9.4"
 ]
 
 [project.optional-dependencies]

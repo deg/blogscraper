@@ -1,6 +1,10 @@
-import argparse
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
+
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
 
 from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
 from blogscraper.scrapers.simonwillison import scrape_simonwillison
@@ -11,6 +15,8 @@ from blogscraper.utils.storage import (
     load_stored_urls,
     save_stored_urls,
 )
+
+console = Console()
 
 # Allow long lines
 # flake8: noqa: E501
@@ -64,9 +70,9 @@ Use your web-browsing capabilities to read each of these web pages. You must rea
 
 <START OF SAMPLE DESIRED RESULT>
 
-*Grok 3 Beta: xAI’s Advanced AI for Reasoning and Problem-Solving*:
+*Grok 3 Beta: xAI's Advanced AI for Reasoning and Problem-Solving*:
 
-xAI’s Grok 3 Beta, powered by a 100k H100 cluster, is designed for reasoning, mathematics, coding, and instruction-following. It uses large-scale reinforcement learning to enhance problem-solving, including backtracking and self-correction. With an Elo score of 1402 in the Chatbot Arena and strong benchmark results (AIME’25: 93.3%, GPQA: 84.6%), Grok 3 rivals top AI models. It introduces a "Think" mode for transparent reasoning and includes a cost-efficient variant, Grok 3 mini.
+xAI's Grok 3 Beta, powered by a 100k H100 cluster, is designed for reasoning, mathematics, coding, and instruction-following. It uses large-scale reinforcement learning to enhance problem-solving, including backtracking and self-correction. With an Elo score of 1402 in the Chatbot Arena and strong benchmark results (AIME'25: 93.3%, GPQA: 84.6%), Grok 3 rivals top AI models. It introduces a "Think" mode for transparent reasoning and includes a cost-efficient variant, Grok 3 mini.
 
 (Source: "Your Guide To AI: March 2025" - https://nathanbenaich.substack.com/p/your-guide-to-ai-march-2025)
 
@@ -75,37 +81,75 @@ xAI’s Grok 3 Beta, powered by a 100k H100 cluster, is designed for reasoning, 
 
 
 def main() -> None:
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Run the blog scrapers.")
-    parser.add_argument(
-        "--lookback",
-        type=int,
-        help="Print URLs collected within the last N days",
-    )
-    parser.add_argument(
-        "--scrape",
-        action="store_true",
-        default=True,
-        help="Run scrapers to collect new URLs (default: True)",
-    )
-    parser.add_argument(
-        "--no-scrape",
-        dest="scrape",
-        action="store_false",
-        help="Do not run scrapers to collect new URLs",
-    )
-    args = parser.parse_args()
+    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
 
-    # Run scrapers and process URLs if --scrape is true
-    if args.scrape:
-        results = run_scrapers()
+    # Ask the user if they want to scrape new URLs
+    scrape = questionary.confirm("Do you want to scrape new URLs?").ask()
+
+    if scrape:
+        # Display choices for which sites to scrape, defaulting to all selected
+        selected_sites = questionary.checkbox(
+            "Select sites to scrape:",
+            choices=[
+                Choice("The Zvi", value="1", checked=True),
+                Choice("Simon Willison", value="2", checked=True),
+                Choice("Nathan Benaich", value="3", checked=True),
+                Choice("Cliffnotes", value="4", checked=True),
+            ],
+        ).ask()
+
+        results = run_scrapers(selected_sites)
     else:
         results = {"existing_urls": load_stored_urls()}
 
-    # Handle the --lookback flag
-    if args.lookback is not None:
-        relevant = recent_urls(results["existing_urls"], args.lookback)
+    # Ask if the user wants to generate an LLM prompt
+    generate_prompt = questionary.confirm(
+        "Do you want to generate an LLM prompt?"
+    ).ask()
+
+    if generate_prompt:
+        # Ask for lookback days with validation
+        while True:
+            try:
+                lookback_days = int(
+                    questionary.text("Enter the number of days to look back:").ask()
+                )
+                break
+            except ValueError:
+                console.print("[red]Please enter a valid number.[/red]")
+
+        relevant = recent_urls(results["existing_urls"], lookback_days)
         print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
+
+
+def run_scrapers(selected_sites: list[str]) -> dict[str, list[URLDict]]:
+    """
+    Scrape blog entries from selected sites.
+
+    Returns:
+        dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
+    """
+    existing_urls = load_stored_urls()
+
+    # Scrape new URLs from selected sources
+    all_new_urls = []
+    if "1" in selected_sites:
+        all_new_urls.extend(scrape_thezvi())
+    if "2" in selected_sites:
+        all_new_urls.extend(scrape_simonwillison())
+    if "3" in selected_sites:
+        all_new_urls.extend(scrape_nathanbenaich())
+    if "4" in selected_sites:
+        all_new_urls.extend(scrape_cliffnotes())
+
+    # Deduplicate and save new URLs
+    unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
+    save_stored_urls(existing_urls + unique_new_urls)
+    return {
+        "all_new_urls": all_new_urls,
+        "unique_new_urls": unique_new_urls,
+        "existing_urls": existing_urls,
+    }
 
 
 def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
@@ -126,40 +170,6 @@ def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
     # Sort the URLs by creation_date, earliest first
     recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
     return recent_urls
-
-
-def run_scrapers() -> dict[str, list[URLDict]]:
-    """
-    Scrape blog entries from interesting sites.
-
-    Returns:
-        dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
-    """
-    # Load existing URLs from urls.json
-    existing_urls = load_stored_urls()
-
-    # Scrape new URLs from different sources
-    new_urls_thezvi = scrape_thezvi()
-    new_urls_simonwillison = scrape_simonwillison()
-    new_urls_nathanbenaich = scrape_nathanbenaich()
-    new_urls_cliffnotes = scrape_cliffnotes()
-
-    # Combine all new URLs
-    all_new_urls = (
-        new_urls_thezvi
-        + new_urls_simonwillison
-        + new_urls_nathanbenaich
-        + new_urls_cliffnotes
-    )
-
-    # Deduplicate and save new URLs
-    unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
-    save_stored_urls(existing_urls + unique_new_urls)
-    return {
-        "all_new_urls": all_new_urls,
-        "unique_new_urls": unique_new_urls,
-        "existing_urls": existing_urls,
-    }
 
 
 def generate_title_list(urls: list[URLDict]) -> str:
