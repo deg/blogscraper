@@ -1,6 +1,7 @@
 import argparse
 from datetime import datetime, timedelta, timezone
 
+from blogscraper.scrapers.nathanbenaich import scrape_nathanbenaich
 from blogscraper.scrapers.simonwillison import scrape_simonwillison
 from blogscraper.scrapers.thezvi import scrape_thezvi
 from blogscraper.types import URLDict
@@ -80,9 +81,10 @@ def run_scrapers() -> dict[str, list[URLDict]]:
     # Scrape new URLs from different sources
     new_urls_thezvi = scrape_thezvi()
     new_urls_simonwillison = scrape_simonwillison()
+    new_urls_nathanbenaich = scrape_nathanbenaich()
 
     # Combine all new URLs
-    all_new_urls = new_urls_thezvi + new_urls_simonwillison
+    all_new_urls = new_urls_thezvi + new_urls_simonwillison + new_urls_nathanbenaich
 
     # Deduplicate and save new URLs
     unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
