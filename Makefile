@@ -67,6 +67,8 @@ outdated-all:
 # Lint all files (fails on errors)
 .PHONY: lint
 lint:
+	@echo "🔍 Running Black..."
+	@poetry run black --check . || lint_failed=1
 	@echo "🔍 Running Ruff..."
 	@poetry run ruff check . || lint_failed=1
 	@echo "🔍 Running Pyright..."
