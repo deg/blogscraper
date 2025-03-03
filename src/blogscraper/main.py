@@ -1,5 +1,6 @@
 import argparse
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 
 from blogscraper.scrapers.nathanbenaich import scrape_nathanbenaich
 from blogscraper.scrapers.simonwillison import scrape_simonwillison
@@ -10,6 +11,67 @@ from blogscraper.utils.storage import (
     load_stored_urls,
     save_stored_urls,
 )
+
+# Allow long lines
+# flake8: noqa: E501
+
+PROMPT_PREFIX = """
+# Summarize Recent AI and Software Development Blog Posts
+
+Here are some very recent blog posts, focused on AI and software development.  Each of these posts typically discusses multiple current stories in great detail.
+"""
+
+PROMPT_SUFFIX = """
+
+## Your Task:
+
+Read the blog post webpages referenced by each of these URLs.
+
+Find the most important stories in each of these posts.
+
+Create a **comprehensive report** aimed at **software practitioners**. Focus on the ten
+to twenty most compelling stories.
+
+
+## Workflow & Requirements:
+
+1. **Read blog posts**
+
+Use your web-browsing capabilities to read each of these web pages. You must read the actual pages. Do not try to extrapolate or guess from the page titles.
+
+2. **Extract & Organize Stories**
+
+   - Identify and extract multiple **distinct stories, insights, or notable points** from each post.
+
+3. **Write the Report**
+
+   - Select the most compelling stories.
+   - For each selected story:
+     - Create a one-paragraph **summary** of its key points.
+     - **Immediately** follow the summary with the **title of the source blog post** and its **URL** in parentheses.
+     - You must summarize only stories from the blog posts that I've shared with you.
+     - You must follow each summary with a reference (title and URL) from the list that I shared above. No other URLs are acceptable.
+   - Ensure the report is **structured and well-organized** for easy readability.
+
+## Formatting Expectations:
+
+- **Each story should be clearly delineated.**
+- **Source titles and URLs should be placed immediately after each corresponding story in parentheses.**
+- **Each story must have a source title and URL from the provided list.**
+- **Use the exact format shown in the example below.**
+
+## Example of Story Formatting:
+
+<START OF SAMPLE DESIRED RESULT>
+
+*Grok 3 Beta: xAI’s Advanced AI for Reasoning and Problem-Solving*:
+
+xAI’s Grok 3 Beta, powered by a 100k H100 cluster, is designed for reasoning, mathematics, coding, and instruction-following. It uses large-scale reinforcement learning to enhance problem-solving, including backtracking and self-correction. With an Elo score of 1402 in the Chatbot Arena and strong benchmark results (AIME’25: 93.3%, GPQA: 84.6%), Grok 3 rivals top AI models. It introduces a "Think" mode for transparent reasoning and includes a cost-efficient variant, Grok 3 mini.
+
+(Source: "Your Guide To AI: March 2025" - https://nathanbenaich.substack.com/p/your-guide-to-ai-march-2025)
+
+<END OF SAMPLE DESIRED RESULT>
+"""
 
 
 def main() -> None:
@@ -43,64 +105,7 @@ def main() -> None:
     # Handle the --lookback flag
     if args.lookback is not None:
         relevant = recent_urls(results["existing_urls"], args.lookback)
-        print(
-            f"""
-# Summarize Recent AI and Software Development Blog Posts
-
-I will provide a list of recent blog post URLs related to AI and software development.
-
-## Your Task:
-
-Summarize the key insights from all the provided blog posts into a **comprehensive
-2,000-word report** aimed at **software practitioners**. Include only the ten most
-interesting stories.
-
-## Workflow & Requirements:
-
-1. **Extract & Organize Stories**
-
-   - Identify and extract multiple **distinct stories, insights, or notable points**
-     from each post.
-
-2. **Write the Report**
-
-   - Choose the ten best stories.
-   - Generate a one-paragraph **summary** of each chosen story, ensuring that each
-     story text ends with the **URL of the source blog post**.
-   - **Important:** Follow each extracted story immediately with the blog URL in
-       parentheses**. It is very important that the blog URL should be one of the blog
-       URLs that I will give you below. Each story must have a source blog URL.
-   - The report should be **structured and well-organized**, making it easy for readers
-     to follow.
-   - It is very important that each story be followed by its blog URL.
-   - It is very important that the blog URLs come only from the list I am supplying
-     here.
-
-## Formatting Expectations:
-
-- **Each story should be clearly delineated.**
-- **URLs should be placed immediately after each corresponding story in parentheses.**
-- **Each story should have a URL**
-- **Each URL should be real, and be taken from the list I am giving you below**
-
-## Example of Story Formatting:
-
-This is the precise format that you must use for each story:
-
-<START OF FORMAT>
-*Story Title*:
-Brief description of the story's key points.
-(Source:
-<a href="https://thezvi.wordpress.com/2025/02/14/growing-LLM-storage/capacity">
-https://thezvi.wordpress.com/2025/02/14/growing-LLM-storage/capacity</a>)
-<END OF FORMAT>
-
-## Here are the URLs to Process:
-
-{generate_html_list(relevant)}
-
-"""
-        )
+        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
 
 
 def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
@@ -151,23 +156,37 @@ def run_scrapers() -> dict[str, list[URLDict]]:
     }
 
 
-def generate_html_list(urls: list[URLDict]) -> str:
+def generate_title_list(urls: list[URLDict]) -> str:
     """
-    Generates an HTML list of <li> elements with <a> links to the URLs.
-
-    Args:
-        urls (list[URLDict]): A list of URLDict objects.
-
-    Returns:
-        str: A string containing the HTML list.
+    Return a numbered list of titles and URLs, e.g.,
+    1. "Economics Roundup 5" - https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    2. ...
     """
-    html_list = "\n"  # "<ul>\n"
-    for url_dict in urls:
-        url = url_dict["url"]
-        html_list += f"{url}\n"
-        # html_list += f'  <li><a href="{url}">{url}</a></li>\n'
-    # html_list += "</ul>"
-    return html_list
+    lines = []
+    for i, url_dict in enumerate(urls, start=1):
+        formatted = url_to_title_string(url_dict["url"])
+        lines.append(f"{i}. {formatted}")
+    return "\n".join(lines)
+
+
+def url_to_title_string(url: str) -> str:
+    """
+    Convert a URL like
+        https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    into a string like
+        "Economics Roundup 5" - https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    """
+    parsed = urlparse(url)
+    path_segments = [seg for seg in parsed.path.split("/") if seg]
+    if not path_segments:
+        # If there's no last segment, just return the URL as-is
+        return f'"{url}" - {url}'
+
+    # The last segment might be "economics-roundup-5"
+    last_segment = path_segments[-1]
+    # Replace hyphens with spaces and title-case it
+    title = last_segment.replace("-", " ").title()
+    return f'"{title}" - {url}'
 
 
 if __name__ == "__main__":  # pragma: no cover
