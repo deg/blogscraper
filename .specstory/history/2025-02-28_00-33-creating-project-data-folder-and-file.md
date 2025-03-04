@@ -6985,7 +6985,693 @@ def show_page_content(url: str) -> None:
         text = soup.get_text()
         console.print(Panel(text, title=f"Content of {url}"))
     except requests.RequestException as e:
-        console
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+
+
+def run_scrapers(selected_sites: list[str]) -> dict[str, list[URLDict]]:
+    """
+    Scrape blog entries from selected sites.
+
+    Returns:
+        dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
+    """
+    existing_urls = load_stored_urls()
+
+    # Scrape new URLs from selected sources
+    all_new_urls = []
+    for index, scraper in enumerate(SCRAPERS):
+        if str(index) in selected_sites:
+            all_new_urls.extend(scraper.function())
+
+    # Deduplicate and save new URLs
+    unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
+    save_stored_urls(existing_urls + unique_new_urls)
+    return {
+        "all_new_urls": all_new_urls,
+        "unique_new_urls": unique_new_urls,
+        "existing_urls": existing_urls,
+    }
+
+
+def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
+    """
+    Prints URLs that were collected within the last 'lookback_days' days.
+
+    Args:
+        existing_urls (list[URLDict]): List of existing URLs.
+        lookback_days (int): Number of days to look back.
+    """
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    recent_urls = [
+        url_dict
+        for url_dict in urls
+        if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
+    ]
+
+    # Sort the URLs by creation_date, earliest first
+    recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return recent_urls
+
+
+def generate_title_list(urls: list[URLDict]) -> str:
+    """
+    Return a numbered list of titles and URLs, e.g.,
+    1. "Economics Roundup 5" -
+       https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    2. ...
+    """
+    lines = []
+    for i, url_dict in enumerate(urls, start=1):
+        formatted = url_to_title_string(url_dict["url"])
+        lines.append(f"{i}. {formatted}")
+    return "\n".join(lines)
+
+
+def url_to_title_string(url: str) -> str:
+    """
+    Convert a URL like
+        https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    into a string like
+        "Economics Roundup 5" -
+         https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    """
+    parsed = urlparse(url)
+    path_segments = [seg for seg in parsed.path.split("/") if seg]
+    if not path_segments:
+        # If there's no last segment, just return the URL as-is
+        return f'"{url}" - {url}'
+
+    # The last segment might be "economics-roundup-5"
+    last_segment = path_segments[-1]
+    # Replace hyphens with spaces and title-case it
+    title = last_segment.replace("-", " ").title()
+    return f'"{title}" - {url}'
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
+```
+
+### Explanation
+
+- **`value` Generation**: The `value` for each `Choice` is generated dynamically using the index of the scraper in the `SCRAPERS` list.
+- **Simplified `Scraper` Dataclass**: Removed the `value` attribute since it's no longer needed.
+
+This refactoring reduces the need for manual management of the `value` attribute and makes the code cleaner and more maintainable.
+
+---
+
+_**User**_
+
+main.py is getting to be too long. How should we refactor into smaller files?
+
+---
+
+_**Assistant**_
+
+Refactoring a large file like `main.py` into smaller, more manageable files can improve readability, maintainability, and scalability. Here's a suggested approach to refactor `main.py`:
+
+### Suggested Refactoring
+
+1. **Separate Concerns**: Divide the code based on functionality. For example, you can separate the user interface logic, scraper management, and utility functions.
+
+2. **Create New Modules**: Create new files for each major component or functionality.
+
+3. **Use a `utils` Module**: For utility functions that are used across different parts of the application.
+
+### Refactoring Plan
+
+1. **`ui.py`**: Handle all user interactions, including prompts and confirmations.
+2. **`scraper_manager.py`**: Manage scraper logic, including running scrapers and handling results.
+3. **`content_viewer.py`**: Handle fetching and displaying webpage content.
+4. **`main.py`**: Serve as the entry point, orchestrating the flow of the application.
+
+### Implementation
+
+#### 1. `ui.py`
+
+```python:src/blogscraper/ui.py
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
+
+console = Console()
+
+def display_welcome():
+    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
+
+def confirm_action(message: str) -> bool:
+    return questionary.confirm(message).ask()
+
+def select_scrapers(scrapers) -> list[str]:
+    return questionary.checkbox(
+        "Select sites to scrape:",
+        choices=[
+            Choice(scraper.name, value=str(index), checked=True)
+            for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+
+def input_lookback_days() -> int:
+    while True:
+        try:
+            return int(questionary.text("Enter the number of days to look back:").ask())
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+```
+
+#### 2. `scraper_manager.py`
+
+```python:src/blogscraper/scraper_manager.py
+from typing import List
+from blogscraper.types import URLDict
+from blogscraper.utils.storage import deduplicate_urls, load_stored_urls, save_stored_urls
+
+def run_scrapers(selected_sites: list[str], scrapers) -> dict[str, list[URLDict]]:
+    existing_urls = load_stored_urls()
+
+    all_new_urls = []
+    for index, scraper in enumerate(scrapers):
+        if str(index) in selected_sites:
+            all_new_urls.extend(scraper.function())
+
+    unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
+    save_stored_urls(existing_urls + unique_new_urls)
+    return {
+        "all_new_urls": all_new_urls,
+        "unique_new_urls": unique_new_urls,
+        "existing_urls": existing_urls,
+    }
+```
+
+#### 3. `content_viewer.py`
+
+```python:src/blogscraper/content_viewer.py
+import requests
+from bs4 import BeautifulSoup
+from rich.console import Console
+from rich.panel import Panel
+
+console = Console()
+
+def show_page_content(url: str) -> None:
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        text = soup.get_text()
+        console.print(Panel(text, title=f"Content of {url}"))
+    except requests.RequestException as e:
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+```
+
+#### 4. `main.py`
+
+```python:src/blogscraper/main.py
+from dataclasses import dataclass
+from typing import Callable, List
+from urllib.parse import urlparse
+from datetime import datetime, timedelta, timezone
+
+from blogscraper.prompt import PROMPT_PREFIX, PROMPT_SUFFIX
+from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
+from blogscraper.scrapers.simonwillison import scrape_simonwillison
+from blogscraper.scrapers.thezvi import scrape_thezvi
+from blogscraper.types import URLDict
+from blogscraper.ui import display_welcome, confirm_action, select_scrapers, input_lookback_days
+from blogscraper.scraper_manager import run_scrapers
+from blogscraper.content_viewer import show_page_content
+
+@dataclass
+class Scraper:
+    name: str
+    function: Callable[[], List[URLDict]]
+
+SCRAPERS = [
+    Scraper(name="The Zvi", function=scrape_thezvi),
+    Scraper(name="Simon Willison", function=scrape_simonwillison),
+    Scraper(name="Nathan Benaich", function=scrape_nathanbenaich),
+    Scraper(name="Cliffnotes", function=scrape_cliffnotes),
+]
+
+def main() -> None:
+    display_welcome()
+
+    scrape = confirm_action("Do you want to scrape new URLs?")
+    if scrape:
+        selected_sites = select_scrapers(SCRAPERS)
+        results = run_scrapers(selected_sites, SCRAPERS)
+    else:
+        results = {"existing_urls": load_stored_urls()}
+
+    view_contents = confirm_action("Do you want to see the page contents?")
+    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
+
+    if not view_contents and not generate_prompt:
+        return
+
+    lookback_days = input_lookback_days()
+    relevant = recent_urls(results["existing_urls"], lookback_days)
+
+    if view_contents:
+        for url_dict in relevant:
+            if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
+                show_page_content(url_dict["url"])
+
+    if generate_prompt:
+        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
+
+def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    recent_urls = [
+        url_dict
+        for url_dict in urls
+        if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
+    ]
+    recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return recent_urls
+
+def generate_title_list(urls: list[URLDict]) -> str:
+    lines = []
+    for i, url_dict in enumerate(urls, start=1):
+        formatted = url_to_title_string(url_dict["url"])
+        lines.append(f"{i}. {formatted}")
+    return "\n".join(lines)
+
+def url_to_title_string(url: str) -> str:
+    parsed = urlparse(url)
+    path_segments = [seg for seg in parsed.path.split("/") if seg]
+    if not path_segments:
+        return f'"{url}" - {url}'
+
+    last_segment = path_segments[-1]
+    title = last_segment.replace("-", " ").title()
+    return f'"{title}" - {url}'
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
+```
+
+### Explanation
+
+- **`ui.py`**: Handles all user interactions, such as displaying messages and getting user input.
+- **`scraper_manager.py`**: Manages the execution of scrapers and handles the results.
+- **`content_viewer.py`**: Responsible for fetching and displaying webpage content.
+- **`main.py`**: Orchestrates the overall flow of the application, using the other modules.
+
+This refactoring organizes the code into logical components, making it easier to maintain and extend.
+
+---
+
+_**User**_
+
+This file is missing some typedecls:
+src/blogscraper/ui.py:14: error: Returning Any from function declared to return "bool"  [no-any-return]
+src/blogscraper/ui.py:17: error: Function is missing a type annotation for one or more arguments  [no-untyped-def]
+src/blogscraper/ui.py:18: error: Returning Any from function declared to return "list[str]"  [no-any-return]
+
+
+---
+
+_**Assistant**_
+
+To address the type declaration issues in `src/blogscraper/ui.py`, you can add type annotations to the function parameters and return types. Here's how you can update the file:
+
+### Update `ui.py`
+
+```python:src/blogscraper/ui.py
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
+from typing import List
+
+console = Console()
+
+def display_welcome() -> None:
+    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
+
+def confirm_action(message: str) -> bool:
+    return questionary.confirm(message).ask()
+
+def select_scrapers(scrapers: List) -> List[str]:
+    return questionary.checkbox(
+        "Select sites to scrape:",
+        choices=[
+            Choice(scraper.name, value=str(index), checked=True)
+            for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+
+def input_lookback_days() -> int:
+    while True:
+        try:
+            return int(questionary.text("Enter the number of days to look back:").ask())
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+```
+
+### Explanation
+
+- **`confirm_action`**: The return type is specified as `bool`, and the function is correctly returning a boolean value.
+- **`select_scrapers`**: The parameter `scrapers` is annotated as `List`, and the return type is `List[str]`.
+- **`input_lookback_days`**: The return type is specified as `int`.
+
+These changes should resolve the type declaration errors and make the code more robust and easier to understand.
+
+---
+
+_**User**_
+
+You don't need List. Remember that this is Python 3.11
+
+---
+
+_**Assistant**_
+
+In Python 3.9 and later, you can use the built-in `list` type for type annotations instead of importing `List` from `typing`. Let's update the code to reflect this:
+
+### Update `ui.py`
+
+```python:src/blogscraper/ui.py
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
+
+console = Console()
+
+def display_welcome() -> None:
+    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
+
+def confirm_action(message: str) -> bool:
+    return questionary.confirm(message).ask()
+
+def select_scrapers(scrapers: list) -> list[str]:
+    return questionary.checkbox(
+        "Select sites to scrape:",
+        choices=[
+            Choice(scraper.name, value=str(index), checked=True)
+            for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+
+def input_lookback_days() -> int:
+    while True:
+        try:
+            return int(questionary.text("Enter the number of days to look back:").ask())
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+```
+
+### Explanation
+
+- **`list` Type**: Replaced `List` with `list` for type annotations, which is the preferred way in Python 3.9 and later.
+- **Type Annotations**: The function `select_scrapers` now uses `list` for both its parameter and return type annotations.
+
+This change simplifies the code by using the built-in `list` type for annotations.
+
+---
+
+_**User**_
+
+You missed some:
+
+src/blogscraper/ui.py:14: error: Returning Any from function declared to return "bool"  [no-any-return]
+src/blogscraper/ui.py:17: error: Missing type parameters for generic type "list"  [type-arg]
+src/blogscraper/ui.py:18: error: Returning Any from function declared to return "list[str]"  [no-any-return]
+
+---
+
+_**Assistant**_
+
+To address the remaining type issues in `src/blogscraper/ui.py`, we need to ensure that the type annotations are correctly specified and that the functions return the expected types. Here's how you can update the file:
+
+### Update `ui.py`
+
+```python:src/blogscraper/ui.py
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
+from typing import Any
+
+console = Console()
+
+def display_welcome() -> None:
+    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
+
+def confirm_action(message: str) -> bool:
+    response: Any = questionary.confirm(message).ask()
+    return bool(response)
+
+def select_scrapers(scrapers: list[Any]) -> list[str]:
+    response: Any = questionary.checkbox(
+        "Select sites to scrape:",
+        choices=[
+            Choice(scraper.name, value=str(index), checked=True)
+            for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+    return list(response)
+
+def input_lookback_days() -> int:
+    while True:
+        try:
+            return int(questionary.text("Enter the number of days to look back:").ask())
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+```
+
+### Explanation
+
+- **`confirm_action`**: The response from `questionary.confirm` is explicitly cast to `bool` to ensure the return type matches the annotation.
+- **`select_scrapers`**: The `scrapers` parameter is annotated as `list[Any]` to indicate it can contain any type of objects. The response is cast to `list[str]` to match the return type annotation.
+- **`Any` Type**: Used to handle the dynamic nature of the `questionary` library, which can return various types depending on user input.
+
+These changes should resolve the type errors and ensure that the function signatures are consistent with their implementations.
+
+---
+
+_**User**_
+
+Instead of Any, can we constrain the type properly?
+
+---
+
+_**Assistant**_
+
+Certainly! Instead of using `Any`, we can use more specific types to better constrain the function parameters and return types. For the `select_scrapers` function, we can define a more specific type for the `scrapers` list. Since each scraper is an instance of the `Scraper` dataclass, we can use that type directly.
+
+### Update `ui.py`
+
+Here's how you can update the file with more specific type annotations:
+
+```python:src/blogscraper/ui.py
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
+from typing import List
+from blogscraper.types import Scraper  # Assuming Scraper is defined in types.py
+
+console = Console()
+
+def display_welcome() -> None:
+    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
+
+def confirm_action(message: str) -> bool:
+    response = questionary.confirm(message, auto_enter=False).ask()
+    return bool(response)
+
+def select_scrapers(scrapers: List[Scraper]) -> List[str]:
+    response = questionary.checkbox(
+        "Select sites to scrape:",
+        choices=[
+            Choice(scraper.name, value=str(index), checked=True)
+            for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+    return list(response)
+
+def input_lookback_days() -> int:
+    while True:
+        try:
+            return int(questionary.text("Enter the number of days to look back:").ask())
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+```
+
+### Explanation
+
+- **`List[Scraper]`**: The `scrapers` parameter in `select_scrapers` is now typed as a list of `Scraper` objects, assuming `Scraper` is defined in `types.py`.
+- **`List[str]`**: The return type of `select_scrapers` is a list of strings, which matches the expected output from the `questionary.checkbox` function.
+
+This update provides more precise type information, which can help with code readability and error checking. If `Scraper` is defined elsewhere, make sure to import it correctly.
+
+---
+
+_**User**_
+
+Hmm, then I guess you have to move Scraper from main.py to types.py.
+
+---
+
+_**Assistant**_
+
+To move the `Scraper` dataclass from `main.py` to `types.py`, you can follow these steps:
+
+1. **Move the `Scraper` Dataclass**: Transfer the `Scraper` dataclass definition to `types.py`.
+2. **Update Imports**: Adjust the import statements in `main.py` and any other files that use `Scraper`.
+
+### Step 1: Move `Scraper` to `types.py`
+
+Add the `Scraper` dataclass to `types.py`:
+
+```python:src/blogscraper/types.py
+from typing import Callable, List
+from blogscraper.types import URLDict
+
+@dataclass
+class Scraper:
+    name: str
+    function: Callable[[], List[URLDict]]
+```
+
+### Step 2: Update `main.py`
+
+Remove the `Scraper` dataclass from `main.py` and import it from `types.py`:
+
+```python:src/blogscraper/main.py
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
+from typing import List
+
+from blogscraper.prompt import PROMPT_PREFIX, PROMPT_SUFFIX
+from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
+from blogscraper.scrapers.simonwillison import scrape_simonwillison
+from blogscraper.scrapers.thezvi import scrape_thezvi
+from blogscraper.types import URLDict, Scraper
+from blogscraper.ui import (
+    display_welcome,
+    confirm_action,
+    select_scrapers,
+    input_lookback_days,
+)
+from blogscraper.scraper_manager import run_scrapers
+from blogscraper.content_viewer import show_page_content
+
+SCRAPERS = [
+    Scraper(name="The Zvi", function=scrape_thezvi),
+    Scraper(name="Simon Willison", function=scrape_simonwillison),
+    Scraper(name="Nathan Benaich", function=scrape_nathanbenaich),
+    Scraper(name="Cliffnotes", function=scrape_cliffnotes),
+]
+
+def main() -> None:
+    display_welcome()
+
+    scrape = confirm_action("Do you want to scrape new URLs?")
+    if scrape:
+        selected_sites = select_scrapers(SCRAPERS)
+        results = run_scrapers(selected_sites, SCRAPERS)
+    else:
+        results = {"existing_urls": load_stored_urls()}
+
+    view_contents = confirm_action("Do you want to see the page contents?")
+    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
+
+    if not view_contents and not generate_prompt:
+        return
+
+    lookback_days = input_lookback_days()
+    relevant = recent_urls(results["existing_urls"], lookback_days)
+
+    if view_contents:
+        for url_dict in relevant:
+            if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
+                show_page_content(url_dict["url"])
+
+    if generate_prompt:
+        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
+
+def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    recent_urls = [
+        url_dict
+        for url_dict in urls
+        if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
+    ]
+    recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return recent_urls
+
+def generate_title_list(urls: list[URLDict]) -> str:
+    lines = []
+    for i, url_dict in enumerate(urls, start=1):
+        formatted = url_to_title_string(url_dict["url"])
+        lines.append(f"{i}. {formatted}")
+    return "\n".join(lines)
+
+def url_to_title_string(url: str) -> str:
+    parsed = urlparse(url)
+    path_segments = [seg for seg in parsed.path.split("/") if seg]
+    if not path_segments:
+        return f'"{url}" - {url}'
+
+    last_segment = path_segments[-1]
+    title = last_segment.replace("-", " ").title()
+    return f'"{title}" - {url}'
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
+```
+
+### Explanation
+
+- **`Scraper` Dataclass**: Moved to `types.py` for better organization and reusability.
+- **Imports**: Updated in `main.py` to import `Scraper` from `types.py`.
+
+This refactoring improves the organization of your code by placing type definitions in a dedicated module, making them easier to manage and reuse across your project.
+
+---
+
+_**User**_
+
+Remember, this is Python 3.11.  No "List"!
+
+---
+
+_**Assistant**_
+
+In Python 3.9 and later, you can use the built-in `list` and `dict` types for type annotations instead of importing `List` and `Dict` from `typing`. Let's update the code to reflect this:
+
+### Update `types.py`
+
+Here's how you can modify the file to use the built-in `list` type:
+
+```python:src/blogscraper/types.py
+from typing import TypedDict, Callable
+from dataclasses import dataclass
+
+class URLDict(TypedDict):
+    url: str
+    source: str
+    creation_date: str
+    harvest_timestamp: str
+
+@dataclass
+class Scraper:
+    name: str
+    function: Callable[[], list[URLDict]]
+```
+
+### Explanation
+
+- **`list[URLDict]`**: Replaced `List[URLDict]` with `list[URLDict]` to use the built-in `list` type for type annotations.
+- **Imports**: Removed the import of `List` from `typing` since it's no longer needed.
+
+This change simplifies the code by using the built-in `list` type for annotations, which is the preferred way in Python 3.9 and later.
 
 ---
 
