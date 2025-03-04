@@ -93,7 +93,7 @@ coverage:
 # Generate an LLM-ready copy of this repo
 .PHONY: as-llm-input
 as-llm-input:
-	poetry run gitingest -o dev-docs/blogscraper-digest.txt -e dev-docs
+	poetry run gitingest -o dev-docs/blogscraper-digest.txt -e dev-docs -e data
 
 
 # Run the application
