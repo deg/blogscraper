@@ -840,6 +840,23 @@ files = [
 pygments = "*"
 
 [[package]]
+name = "isort"
+version = "6.0.1"
+description = "A Python utility / library to sort Python imports."
+optional = true
+python-versions = ">=3.9.0"
+groups = ["main"]
+markers = "extra == \"dev\""
+files = [
+    {file = "isort-6.0.1-py3-none-any.whl", hash = "sha256:2dc5d7f65c9678d94c88dfc29161a320eec67328bc97aad576874cb4be1e9615"},
+    {file = "isort-6.0.1.tar.gz", hash = "sha256:1cb5df28dfbc742e490c5e41bad6da41b805b0a8be7bc93cd0fb2a8a890ac450"},
+]
+
+[package.extras]
+colors = ["colorama"]
+plugins = ["setuptools"]
+
+[[package]]
 name = "jedi"
 version = "0.19.2"
 description = "An autocompletion tool for Python that can be used for text editors."
@@ -2709,9 +2726,9 @@ files = [
 ]
 
 [extras]
-dev = ["black", "gitingest", "ipython", "mypy", "pre-commit", "pyright", "pytest", "pytest-cov", "ruff", "types-beautifulsoup4", "types-requests"]
+dev = ["black", "gitingest", "ipython", "isort", "mypy", "pre-commit", "pyright", "pytest", "pytest-cov", "ruff", "types-beautifulsoup4", "types-requests"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "398e7c03637128e0df27bbae53223650507bf98a3f38090cf553a15618caf9fe"
+content-hash = "ce47f8bfd7bc00de84f381f0d0bd1484f4f1932db6386b104973b4bbb0af86c5"

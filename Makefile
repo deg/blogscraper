@@ -69,6 +69,8 @@ outdated-all:
 lint:
 	@echo "🔍 Running Black..."
 	@poetry run black --check . || lint_failed=1
+	@echo "🔍 Running isort..."
+	@poetry run isort --check-only src  || lint_failed=1
 	@echo "🔍 Running Ruff..."
 	@poetry run ruff check . || lint_failed=1
 	@echo "🔍 Running Pyright..."
