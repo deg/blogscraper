@@ -1,9 +1,8 @@
 import requests
 import trafilatura
-from rich.console import Console
 from rich.panel import Panel
 
-console = Console()
+from blogscraper.ui import console
 
 
 def show_page_content(url: str) -> None:

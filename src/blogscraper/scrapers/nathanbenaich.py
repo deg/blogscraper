@@ -1,10 +1,9 @@
 from datetime import datetime, timezone
 
-import requests
 from bs4 import BeautifulSoup, Tag
 
 from blogscraper.types import URLDict
-from blogscraper.utils.url_utils import normalize_url
+from blogscraper.utils.url_utils import get_html, normalize_url
 
 
 def scrape_nathanbenaich() -> list[URLDict]:
@@ -26,13 +25,10 @@ def scrape_cliffnotes() -> list[URLDict]:
 
 
 def scrape_blog(base_url: str, selector: str, time_within_a: bool) -> list[URLDict]:
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        + "AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/58.0.3029.110 Safari/537.3"
-    }
-    response = requests.get(base_url, headers=headers)
-    soup = BeautifulSoup(response.content, "html.parser")
+    html = get_html(base_url)
+    if html is None:
+        return []
+    soup = BeautifulSoup(html, "html.parser")
     archive_list = soup.select(selector)
     return extract_urls_from_archive(base_url, archive_list, time_within_a)
 

@@ -2,12 +2,11 @@ import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
-import requests
 from bs4 import BeautifulSoup
 
 from blogscraper.types import URLDict
 from blogscraper.utils.scraper_utils import fetch_and_parse_urls
-from blogscraper.utils.url_utils import normalize_url
+from blogscraper.utils.url_utils import get_html, normalize_url
 
 # Define a constant for the number of threads
 MAX_WORKERS = 5
@@ -42,8 +41,11 @@ def scrape_thezvi() -> list[URLDict]:
     )
 
     # Fetch additional URLs from the archive section
-    response = requests.get(base_url)
-    soup = BeautifulSoup(response.content, "html.parser")
+    html = get_html(base_url)
+    if html is None:
+        return main_page_urls
+
+    soup = BeautifulSoup(html, "html.parser")
     search_section = soup.select_one("li#archives-2")
     additional_urls: list[URLDict] = []
 

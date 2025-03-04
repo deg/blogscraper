@@ -1,11 +1,10 @@
 from datetime import datetime, timezone
 from typing import Callable, List
 
-import requests
 from bs4 import BeautifulSoup
 
 from blogscraper.types import URLDict
-from blogscraper.utils.url_utils import normalize_url
+from blogscraper.utils.url_utils import get_html, normalize_url
 
 
 def fetch_and_parse_urls(
@@ -24,11 +23,14 @@ def fetch_and_parse_urls(
         List[URLDict]: A list of URLDict objects with absolute URLs.
     """
     print(f"Fetching and parsing URLs from {base_url}")
-    response = requests.get(base_url)
-    soup = BeautifulSoup(response.content, "html.parser")
-
-    links = soup.select(selector)
     urls: List[URLDict] = []
+
+    html = get_html(base_url)
+    if html is None:
+        return []
+
+    soup = BeautifulSoup(html, "html.parser")
+    links = soup.select(selector)
 
     for link in links:
         href = link.get("href")
