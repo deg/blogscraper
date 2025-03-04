@@ -13,7 +13,7 @@ def display_welcome() -> None:
 
 
 def confirm_action(message: str) -> bool:
-    response = questionary.confirm(message).ask()
+    response = questionary.confirm(message, auto_enter=False).ask()
     return bool(response)
 
 
