@@ -44,15 +44,15 @@ def main() -> None:
         return
 
     lookback_days = input_lookback_days()
-    relevant = recent_urls(results["existing_urls"], lookback_days)
+    recent = recent_urls(results["existing_urls"], lookback_days)
 
     if view_contents:
-        for url_dict in relevant:
+        for url_dict in recent:
             if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
                 show_page_content(url_dict["url"])
 
     if generate_prompt:
-        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
+        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(recent)}\n\n{PROMPT_SUFFIX}")
 
 
 def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
@@ -64,15 +64,15 @@ def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
         lookback_days (int): Number of days to look back.
     """
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
-    recent_urls = [
+    recent = [
         url_dict
         for url_dict in urls
         if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
     ]
 
     # Sort the URLs by creation_date, earliest first
-    recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
-    return recent_urls
+    recent.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return recent
 
 
 def generate_title_list(urls: list[URLDict]) -> str:
