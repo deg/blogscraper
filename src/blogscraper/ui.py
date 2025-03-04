@@ -9,11 +9,22 @@ console = Console()
 
 
 def display_welcome() -> None:
-    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
+    console.print(
+        Panel(
+            """Welcome to the Blog Scraper!
+
+This tool gathers and summarizes several popular AI-related blogs,
+using a variety of web-scraping and AI tools.
+
+Started March 2025, by David Goldfarb. Questions to deg@degel.com
+    """,
+            title="Blog Scraper",
+        )
+    )
 
 
-def confirm_action(message: str) -> bool:
-    response = questionary.confirm(message, auto_enter=False).ask()
+def confirm_action(message: str, default: bool = True) -> bool:
+    response = questionary.confirm(message, auto_enter=False, default=default).ask()
     return bool(response)
 
 

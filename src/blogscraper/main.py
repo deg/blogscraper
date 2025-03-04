@@ -14,7 +14,7 @@ from blogscraper.ui import (
     input_lookback_days,
     select_scrapers,
 )
-from blogscraper.utils.storage import load_stored_urls
+from blogscraper.utils.storage import clear_stored_urls, load_stored_urls
 
 SCRAPERS = [
     Scraper(name="The Zvi", function=scrape_thezvi),
@@ -29,6 +29,9 @@ def main() -> None:
 
     scrape = confirm_action("Do you want to scrape new URLs?")
     if scrape:
+        delete_old = confirm_action("Erase old DB and start fresh?", default=False)
+        if delete_old:
+            clear_stored_urls()
         selected_sites = select_scrapers(SCRAPERS)
         results = run_scrapers(selected_sites, SCRAPERS)
     else:
