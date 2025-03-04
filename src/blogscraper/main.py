@@ -1,34 +1,20 @@
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Callable, List
 from urllib.parse import urlparse
 
-import questionary
-import requests
-from bs4 import BeautifulSoup
-from questionary import Choice
-from rich.console import Console
-from rich.panel import Panel
-
+from blogscraper.content_viewer import show_page_content
 from blogscraper.prompt import PROMPT_PREFIX, PROMPT_SUFFIX
+from blogscraper.scraper_manager import run_scrapers
 from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
 from blogscraper.scrapers.simonwillison import scrape_simonwillison
 from blogscraper.scrapers.thezvi import scrape_thezvi
-from blogscraper.types import URLDict
-from blogscraper.utils.storage import (
-    deduplicate_urls,
-    load_stored_urls,
-    save_stored_urls,
+from blogscraper.types import Scraper, URLDict
+from blogscraper.ui import (
+    confirm_action,
+    display_welcome,
+    input_lookback_days,
+    select_scrapers,
 )
-
-console = Console()
-
-
-@dataclass
-class Scraper:
-    name: str
-    function: Callable[[], List[URLDict]]
-
+from blogscraper.utils.storage import load_stored_urls
 
 SCRAPERS = [
     Scraper(name="The Zvi", function=scrape_thezvi),
@@ -39,99 +25,31 @@ SCRAPERS = [
 
 
 def main() -> None:
-    console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
+    display_welcome()
 
-    # Ask the user if they want to scrape new URLs
-    scrape = questionary.confirm("Do you want to scrape new URLs?").ask()
-
+    scrape = confirm_action("Do you want to scrape new URLs?")
     if scrape:
-        # Display choices for which sites to scrape, defaulting to all selected
-        selected_sites = questionary.checkbox(
-            "Select sites to scrape:",
-            choices=[
-                Choice(scraper.name, value=str(index), checked=True)
-                for index, scraper in enumerate(SCRAPERS)
-            ],
-        ).ask()
-
-        results = run_scrapers(selected_sites)
+        selected_sites = select_scrapers(SCRAPERS)
+        results = run_scrapers(selected_sites, SCRAPERS)
     else:
         results = {"existing_urls": load_stored_urls()}
 
-    # Ask if the user wants to see the page contents
-    view_contents = questionary.confirm("Do you want to see the page contents?").ask()
-
-    # Ask if the user wants to generate an LLM prompt
-    generate_prompt = questionary.confirm(
-        "Do you want to generate an LLM prompt?"
-    ).ask()
+    view_contents = confirm_action("Do you want to see the page contents?")
+    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
 
     if not view_contents and not generate_prompt:
         return
 
-    while True:
-        try:
-            lookback_days = int(
-                questionary.text("Enter the number of days to look back:").ask()
-            )
-            break
-        except ValueError:
-            console.print("[red]Please enter a valid number.[/red]")
-
+    lookback_days = input_lookback_days()
     relevant = recent_urls(results["existing_urls"], lookback_days)
 
     if view_contents:
         for url_dict in relevant:
-            view_page = questionary.confirm(
-                f"Do you want to see the content for {url_dict['url']}?"
-            ).ask()
-            if view_page:
+            if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
                 show_page_content(url_dict["url"])
 
     if generate_prompt:
         print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
-
-
-def show_page_content(url: str) -> None:
-    """
-    Fetch and display the content of a webpage.
-
-    Args:
-        url (str): The URL of the webpage to fetch.
-    """
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, "html.parser")
-        text = soup.get_text()
-        console.print(Panel(text, title=f"Content of {url}"))
-    except requests.RequestException as e:
-        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
-
-
-def run_scrapers(selected_sites: list[str]) -> dict[str, list[URLDict]]:
-    """
-    Scrape blog entries from selected sites.
-
-    Returns:
-        dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
-    """
-    existing_urls = load_stored_urls()
-
-    # Scrape new URLs from selected sources
-    all_new_urls = []
-    for index, scraper in enumerate(SCRAPERS):
-        if str(index) in selected_sites:
-            all_new_urls.extend(scraper.function())
-
-    # Deduplicate and save new URLs
-    unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
-    save_stored_urls(existing_urls + unique_new_urls)
-    return {
-        "all_new_urls": all_new_urls,
-        "unique_new_urls": unique_new_urls,
-        "existing_urls": existing_urls,
-    }
 
 
 def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
