@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 import questionary
+import requests
+from bs4 import BeautifulSoup
 from questionary import Choice
 from rich.console import Console
 from rich.panel import Panel
@@ -42,24 +44,57 @@ def main() -> None:
     else:
         results = {"existing_urls": load_stored_urls()}
 
+    # Ask if the user wants to see the page contents
+    view_contents = questionary.confirm("Do you want to see the page contents?").ask()
+
     # Ask if the user wants to generate an LLM prompt
     generate_prompt = questionary.confirm(
         "Do you want to generate an LLM prompt?"
     ).ask()
 
+    if not view_contents and not generate_prompt:
+        return
+
+    while True:
+        try:
+            lookback_days = int(
+                questionary.text("Enter the number of days to look back:").ask()
+            )
+            break
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+
+    relevant = recent_urls(results["existing_urls"], lookback_days)
+
+    if view_contents:
+        for url_dict in relevant:
+            view_page = questionary.confirm(
+                f"Do you want to see the content for {url_dict['url']}?"
+            ).ask()
+            if view_page:
+                show_page_content(url_dict["url"])
+
     if generate_prompt:
         # Ask for lookback days with validation
-        while True:
-            try:
-                lookback_days = int(
-                    questionary.text("Enter the number of days to look back:").ask()
-                )
-                break
-            except ValueError:
-                console.print("[red]Please enter a valid number.[/red]")
 
-        relevant = recent_urls(results["existing_urls"], lookback_days)
         print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
+
+
+def show_page_content(url: str) -> None:
+    """
+    Fetch and display the content of a webpage.
+
+    Args:
+        url (str): The URL of the webpage to fetch.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        text = soup.get_text()
+        console.print(Panel(text, title=f"Content of {url}"))
+    except requests.RequestException as e:
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
 
 
 def run_scrapers(selected_sites: list[str]) -> dict[str, list[URLDict]]:
