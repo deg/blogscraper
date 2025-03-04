@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from typing import Callable, List
 from urllib.parse import urlparse
 
 import questionary
@@ -22,6 +24,20 @@ from blogscraper.utils.storage import (
 console = Console()
 
 
+@dataclass
+class Scraper:
+    name: str
+    function: Callable[[], List[URLDict]]
+
+
+SCRAPERS = [
+    Scraper(name="The Zvi", function=scrape_thezvi),
+    Scraper(name="Simon Willison", function=scrape_simonwillison),
+    Scraper(name="Nathan Benaich", function=scrape_nathanbenaich),
+    Scraper(name="Cliffnotes", function=scrape_cliffnotes),
+]
+
+
 def main() -> None:
     console.print(Panel("Welcome to the Blog Scraper!", title="Blog Scraper"))
 
@@ -33,10 +49,8 @@ def main() -> None:
         selected_sites = questionary.checkbox(
             "Select sites to scrape:",
             choices=[
-                Choice("The Zvi", value="1", checked=True),
-                Choice("Simon Willison", value="2", checked=True),
-                Choice("Nathan Benaich", value="3", checked=True),
-                Choice("Cliffnotes", value="4", checked=True),
+                Choice(scraper.name, value=str(index), checked=True)
+                for index, scraper in enumerate(SCRAPERS)
             ],
         ).ask()
 
@@ -75,8 +89,6 @@ def main() -> None:
                 show_page_content(url_dict["url"])
 
     if generate_prompt:
-        # Ask for lookback days with validation
-
         print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
 
 
@@ -108,14 +120,9 @@ def run_scrapers(selected_sites: list[str]) -> dict[str, list[URLDict]]:
 
     # Scrape new URLs from selected sources
     all_new_urls = []
-    if "1" in selected_sites:
-        all_new_urls.extend(scrape_thezvi())
-    if "2" in selected_sites:
-        all_new_urls.extend(scrape_simonwillison())
-    if "3" in selected_sites:
-        all_new_urls.extend(scrape_nathanbenaich())
-    if "4" in selected_sites:
-        all_new_urls.extend(scrape_cliffnotes())
+    for index, scraper in enumerate(SCRAPERS):
+        if str(index) in selected_sites:
+            all_new_urls.extend(scraper.function())
 
     # Deduplicate and save new URLs
     unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
