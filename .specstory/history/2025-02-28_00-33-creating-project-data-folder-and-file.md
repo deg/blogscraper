@@ -7675,6 +7675,1037 @@ This change simplifies the code by using the built-in `list` type for annotation
 
 ---
 
+_**User**_
+
+Fill in the delete_old path
+
+---
+
+_**Assistant**_
+
+To implement the functionality for deleting old data when the user chooses to "Erase old DB and start fresh," you need to define what "deleting old data" means in the context of your application. Typically, this would involve clearing or resetting the storage where URLs or other data are saved.
+
+Assuming you have a function in `storage.py` or a similar module that handles data storage, you can add a function to clear the stored data. Let's assume you have a function called `clear_stored_urls()` in `storage.py`.
+
+### Step 1: Implement `clear_stored_urls` in `storage.py`
+
+First, ensure you have a function to clear the stored data. If it doesn't exist, you can add it:
+
+```python:src/blogscraper/utils/storage.py
+def clear_stored_urls() -> None:
+    """
+    Clears all stored URLs from the storage.
+    """
+    # Implement the logic to clear the storage, e.g., delete a file or clear a database table
+    # Example for a file-based storage:
+    with open('stored_urls.json', 'w') as file:
+        file.write('[]')  # Write an empty list to clear the file
+```
+
+### Step 2: Update `main.py` to Use `clear_stored_urls`
+
+Now, update `main.py` to call this function when the user chooses to delete old data:
+
+```python:src/blogscraper/main.py
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
+
+from blogscraper.content_viewer import show_page_content
+from blogscraper.prompt import PROMPT_PREFIX, PROMPT_SUFFIX
+from blogscraper.scraper_manager import run_scrapers
+from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
+from blogscraper.scrapers.simonwillison import scrape_simonwillison
+from blogscraper.scrapers.thezvi import scrape_thezvi
+from blogscraper.types import Scraper, URLDict
+from blogscraper.ui import (
+    confirm_action,
+    display_welcome,
+    input_lookback_days,
+    select_scrapers,
+)
+from blogscraper.utils.storage import load_stored_urls, clear_stored_urls
+
+SCRAPERS = [
+    Scraper(name="The Zvi", function=scrape_thezvi),
+    Scraper(name="Simon Willison", function=scrape_simonwillison),
+    Scraper(name="Nathan Benaich", function=scrape_nathanbenaich),
+    Scraper(name="Cliffnotes", function=scrape_cliffnotes),
+]
+
+
+def main() -> None:
+    display_welcome()
+
+    scrape = confirm_action("Do you want to scrape new URLs?")
+    if scrape:
+        delete_old = confirm_action("Erase old DB and start fresh?")
+        if delete_old:
+            clear_stored_urls()  # Clear the stored URLs
+        selected_sites = select_scrapers(SCRAPERS)
+        results = run_scrapers(selected_sites, SCRAPERS)
+    else:
+        results = {"existing_urls": load_stored_urls()}
+
+    view_contents = confirm_action("Do you want to see the page contents?")
+    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
+
+    if not view_contents and not generate_prompt:
+        return
+
+    lookback_days = input_lookback_days()
+    relevant = recent_urls(results["existing_urls"], lookback_days)
+
+    if view_contents:
+        for url_dict in relevant:
+            if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
+                show_page_content(url_dict["url"])
+
+    if generate_prompt:
+        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
+
+
+def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
+    """
+    Prints URLs that were collected within the last 'lookback_days' days.
+
+    Args:
+        existing_urls (list[URLDict]): List of existing URLs.
+        lookback_days (int): Number of days to look back.
+    """
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    recent_urls = [
+        url_dict
+        for url_dict in urls
+        if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
+    ]
+
+    # Sort the URLs by creation_date, earliest first
+    recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return recent_urls
+
+
+def generate_title_list(urls: list[URLDict]) -> str:
+    """
+    Return a numbered list of titles and URLs, e.g.,
+    1. "Economics Roundup 5" -
+       https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    2. ...
+    """
+    lines = []
+    for i, url_dict in enumerate(urls, start=1):
+        formatted = url_to_title_string(url_dict["url"])
+        lines.append(f"{i}. {formatted}")
+    return "\n".join(lines)
+
+
+def url_to_title_string(url: str) -> str:
+    """
+    Convert a URL like
+        https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    into a string like
+        "Economics Roundup 5" -
+         https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    """
+    parsed = urlparse(url)
+    path_segments = [seg for seg in parsed.path.split("/") if seg]
+    if not path_segments:
+        # If there's no last segment, just return the URL as-is
+        return f'"{url}" - {url}'
+
+    # The last segment might be "economics-roundup-5"
+    last_segment = path_segments[-1]
+    # Replace hyphens with spaces and title-case it
+    title = last_segment.replace("-", " ").title()
+    return f'"{title}" - {url}'
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
+```
+
+### Explanation
+
+- **`clear_stored_urls`**: This function is called when the user confirms they want to erase the old database. It clears the stored URLs, effectively resetting the storage.
+- **Integration**: The function is integrated into the `main` function, ensuring that the storage is cleared before new data is scraped if the user chooses to do so.
+
+This setup allows users to start with a fresh database if they choose, providing flexibility in managing stored data.
+
+---
+
+_**User**_
+
+Fix clear_stored_urls to match the rest of this file
+
+---
+
+_**Assistant**_
+
+To ensure that `clear_stored_urls` matches the rest of the file, it should use the same file path logic as `load_stored_urls` and `save_stored_urls`. This means using the `os.path.join` function to construct the file path and ensuring the directory exists.
+
+Here's how you can update `clear_stored_urls` in `storage.py`:
+
+### Update `storage.py`
+
+```python:src/blogscraper/utils/storage.py
+import json
+import os
+
+from blogscraper.types import URLDict
+
+
+def load_stored_urls() -> list[URLDict]:
+    file_path = os.path.join("data", "urls.json")
+
+    if not os.path.exists(file_path):
+        return []
+
+    with open(file_path, "r") as file:
+        try:
+            data = json.load(file)
+            if isinstance(data, list):
+                return data
+        except json.JSONDecodeError:
+            pass
+
+    return []
+
+
+def save_stored_urls(urls_list: list[URLDict]) -> None:
+    directory = "data"
+    file_path = os.path.join(directory, "urls.json")
+    os.makedirs(directory, exist_ok=True)
+    with open(file_path, "w") as file:
+        json.dump(urls_list, file, indent=4)
+
+
+def deduplicate_urls(
+    new_urls: list[URLDict], existing_urls: list[URLDict]
+) -> list[URLDict]:
+    """
+    Returns a list of URLs from new_urls that are not present in existing_urls.
+
+    Args:
+        new_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
+        existing_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
+
+    Returns:
+        list[URLDict]: A list of dictionaries from new_urls with unique "url" values not
+                    found in existing_urls.
+    """
+    existing_urls_set = {url_dict["url"] for url_dict in existing_urls}
+    seen_urls = set()
+    unique_new_urls = []
+
+    for url_dict in new_urls:
+        url = url_dict["url"]
+        if url not in seen_urls and url not in existing_urls_set:
+            seen_urls.add(url)
+            print(f"Adding {url}")
+            unique_new_urls.append(url_dict)
+
+    return unique_new_urls
+
+
+def clear_stored_urls() -> None:
+    """
+    Clears all stored URLs from the storage.
+    """
+    directory = "data"
+    file_path = os.path.join(directory, "urls.json")
+    os.makedirs(directory, exist_ok=True)
+    with open(file_path, "w") as file:
+        file.write('[]')  # Write an empty list to clear the file
+```
+
+### Explanation
+
+- **File Path Consistency**: The `clear_stored_urls` function now uses `os.path.join` to construct the file path, ensuring consistency with `load_stored_urls` and `save_stored_urls`.
+- **Directory Creation**: The `os.makedirs` function is used to ensure the directory exists before attempting to write to the file, similar to `save_stored_urls`.
+
+This update ensures that `clear_stored_urls` is consistent with the rest of the file in terms of file handling and directory management.
+
+---
+
+_**User**_
+
+Make this file DRYer
+
+---
+
+_**Assistant**_
+
+To make the `storage.py` file DRYer (Don't Repeat Yourself), we can refactor the code to avoid repeating the logic for constructing the file path and ensuring the directory exists. We can achieve this by creating helper functions for these tasks.
+
+### Refactored `storage.py`
+
+Here's how you can refactor the file:
+
+```python:src/blogscraper/utils/storage.py
+import json
+import os
+from blogscraper.types import URLDict
+
+DATA_DIRECTORY = "data"
+URLS_FILENAME = "urls.json"
+
+def get_file_path() -> str:
+    """
+    Constructs the file path for the URLs storage file.
+    """
+    return os.path.join(DATA_DIRECTORY, URLS_FILENAME)
+
+def ensure_directory_exists() -> None:
+    """
+    Ensures that the data directory exists.
+    """
+    os.makedirs(DATA_DIRECTORY, exist_ok=True)
+
+def load_stored_urls() -> list[URLDict]:
+    file_path = get_file_path()
+
+    if not os.path.exists(file_path):
+        return []
+
+    with open(file_path, "r") as file:
+        try:
+            data = json.load(file)
+            if isinstance(data, list):
+                return data
+        except json.JSONDecodeError:
+            pass
+
+    return []
+
+def save_stored_urls(urls_list: list[URLDict]) -> None:
+    ensure_directory_exists()
+    file_path = get_file_path()
+    with open(file_path, "w") as file:
+        json.dump(urls_list, file, indent=4)
+
+def deduplicate_urls(
+    new_urls: list[URLDict], existing_urls: list[URLDict]
+) -> list[URLDict]:
+    """
+    Returns a list of URLs from new_urls that are not present in existing_urls.
+
+    Args:
+        new_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
+        existing_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
+
+    Returns:
+        list[URLDict]: A list of dictionaries from new_urls with unique "url" values not
+                    found in existing_urls.
+    """
+    existing_urls_set = {url_dict["url"] for url_dict in existing_urls}
+    seen_urls = set()
+    unique_new_urls = []
+
+    for url_dict in new_urls:
+        url = url_dict["url"]
+        if url not in seen_urls and url not in existing_urls_set:
+            seen_urls.add(url)
+            print(f"Adding {url}")
+            unique_new_urls.append(url_dict)
+
+    return unique_new_urls
+
+def clear_stored_urls() -> None:
+    """
+    Clears all stored URLs from the storage.
+    """
+    ensure_directory_exists()
+    file_path = get_file_path()
+    with open(file_path, "w") as file:
+        file.write('[]')  # Write an empty list to clear the file
+```
+
+### Explanation
+
+- **`get_file_path`**: A helper function to construct the file path for the URLs storage file. This avoids repeating the logic for constructing the file path.
+- **`ensure_directory_exists`**: A helper function to ensure the data directory exists. This avoids repeating the directory creation logic.
+- **Refactoring**: The `load_stored_urls`, `save_stored_urls`, and `clear_stored_urls` functions now use these helper functions to avoid code duplication.
+
+This refactoring makes the code cleaner and easier to maintain by centralizing common logic.
+
+---
+
+_**User**_
+
+It might be cleaner to put ensure_directory_exists inline in get_file_path. What do you think?
+
+---
+
+_**Assistant**_
+
+Integrating `ensure_directory_exists` directly into `get_file_path` can indeed streamline the code by ensuring that the directory is always checked and created (if necessary) whenever the file path is constructed. This approach reduces the need to call `ensure_directory_exists` separately before file operations, making the code cleaner and less error-prone.
+
+Here's how you can refactor the code to incorporate this change:
+
+### Refactored `storage.py`
+
+```python:src/blogscraper/utils/storage.py
+import json
+import os
+from blogscraper.types import URLDict
+
+DATA_DIRECTORY = "data"
+URLS_FILENAME = "urls.json"
+
+def get_file_path() -> str:
+    """
+    Constructs the file path for the URLs storage file and ensures the directory exists.
+    """
+    os.makedirs(DATA_DIRECTORY, exist_ok=True)
+    return os.path.join(DATA_DIRECTORY, URLS_FILENAME)
+
+def load_stored_urls() -> list[URLDict]:
+    file_path = get_file_path()
+
+    if not os.path.exists(file_path):
+        return []
+
+    with open(file_path, "r") as file:
+        try:
+            data = json.load(file)
+            if isinstance(data, list):
+                return data
+        except json.JSONDecodeError:
+            pass
+
+    return []
+
+def save_stored_urls(urls_list: list[URLDict]) -> None:
+    file_path = get_file_path()
+    with open(file_path, "w") as file:
+        json.dump(urls_list, file, indent=4)
+
+def deduplicate_urls(
+    new_urls: list[URLDict], existing_urls: list[URLDict]
+) -> list[URLDict]:
+    """
+    Returns a list of URLs from new_urls that are not present in existing_urls.
+
+    Args:
+        new_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
+        existing_urls (list[URLDict]): A list of dictionaries, each with a "url" key.
+
+    Returns:
+        list[URLDict]: A list of dictionaries from new_urls with unique "url" values not
+                    found in existing_urls.
+    """
+    existing_urls_set = {url_dict["url"] for url_dict in existing_urls}
+    seen_urls = set()
+    unique_new_urls = []
+
+    for url_dict in new_urls:
+        url = url_dict["url"]
+        if url not in seen_urls and url not in existing_urls_set:
+            seen_urls.add(url)
+            print(f"Adding {url}")
+            unique_new_urls.append(url_dict)
+
+    return unique_new_urls
+
+def clear_stored_urls() -> None:
+    """
+    Clears all stored URLs from the storage.
+    """
+    file_path = get_file_path()
+    with open(file_path, "w") as file:
+        file.write('[]')  # Write an empty list to clear the file
+```
+
+### Explanation
+
+- **`get_file_path`**: Now includes the logic to ensure the directory exists, which simplifies the rest of the code by removing the need to call `ensure_directory_exists` separately.
+- **Code Simplification**: The `save_stored_urls` and `clear_stored_urls` functions no longer need to call `ensure_directory_exists`, as this is handled within `get_file_path`.
+
+This refactoring makes the code cleaner and ensures that the directory is always prepared before any file operations, reducing the risk of errors related to missing directories.
+
+---
+
+_**User**_
+
+This should default to NO
+
+---
+
+_**Assistant**_
+
+To ensure that the confirmation prompt for erasing the old database defaults to "No," you can set the `default` parameter of the `questionary.confirm` function to `False`. This will make "No" the default option when the user is prompted.
+
+Here's how you can update the relevant part of `main.py`:
+
+### Update `main.py`
+
+```python:src/blogscraper/main.py
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
+
+from blogscraper.content_viewer import show_page_content
+from blogscraper.prompt import PROMPT_PREFIX, PROMPT_SUFFIX
+from blogscraper.scraper_manager import run_scrapers
+from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
+from blogscraper.scrapers.simonwillison import scrape_simonwillison
+from blogscraper.scrapers.thezvi import scrape_thezvi
+from blogscraper.types import Scraper, URLDict
+from blogscraper.ui import (
+    confirm_action,
+    display_welcome,
+    input_lookback_days,
+    select_scrapers,
+)
+from blogscraper.utils.storage import load_stored_urls, clear_stored_urls
+
+SCRAPERS = [
+    Scraper(name="The Zvi", function=scrape_thezvi),
+    Scraper(name="Simon Willison", function=scrape_simonwillison),
+    Scraper(name="Nathan Benaich", function=scrape_nathanbenaich),
+    Scraper(name="Cliffnotes", function=scrape_cliffnotes),
+]
+
+
+def main() -> None:
+    display_welcome()
+
+    scrape = confirm_action("Do you want to scrape new URLs?")
+    if scrape:
+        delete_old = confirm_action("Erase old DB and start fresh?", default=False)
+        if delete_old:
+            clear_stored_urls()  # Clear the stored URLs
+        selected_sites = select_scrapers(SCRAPERS)
+        results = run_scrapers(selected_sites, SCRAPERS)
+    else:
+        results = {"existing_urls": load_stored_urls()}
+
+    view_contents = confirm_action("Do you want to see the page contents?")
+    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
+
+    if not view_contents and not generate_prompt:
+        return
+
+    lookback_days = input_lookback_days()
+    relevant = recent_urls(results["existing_urls"], lookback_days)
+
+    if view_contents:
+        for url_dict in relevant:
+            if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
+                show_page_content(url_dict["url"])
+
+    if generate_prompt:
+        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(relevant)}\n\n{PROMPT_SUFFIX}")
+
+
+def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
+    """
+    Prints URLs that were collected within the last 'lookback_days' days.
+
+    Args:
+        existing_urls (list[URLDict]): List of existing URLs.
+        lookback_days (int): Number of days to look back.
+    """
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    recent_urls = [
+        url_dict
+        for url_dict in urls
+        if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
+    ]
+
+    # Sort the URLs by creation_date, earliest first
+    recent_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return recent_urls
+
+
+def generate_title_list(urls: list[URLDict]) -> str:
+    """
+    Return a numbered list of titles and URLs, e.g.,
+    1. "Economics Roundup 5" -
+       https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    2. ...
+    """
+    lines = []
+    for i, url_dict in enumerate(urls, start=1):
+        formatted = url_to_title_string(url_dict["url"])
+        lines.append(f"{i}. {formatted}")
+    return "\n".join(lines)
+
+
+def url_to_title_string(url: str) -> str:
+    """
+    Convert a URL like
+        https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    into a string like
+        "Economics Roundup 5" -
+         https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+    """
+    parsed = urlparse(url)
+    path_segments = [seg for seg in parsed.path.split("/") if seg]
+    if not path_segments:
+        # If there's no last segment, just return the URL as-is
+        return f'"{url}" - {url}'
+
+    # The last segment might be "economics-roundup-5"
+    last_segment = path_segments[-1]
+    # Replace hyphens with spaces and title-case it
+    title = last_segment.replace("-", " ").title()
+    return f'"{title}" - {url}'
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()
+```
+
+### Explanation
+
+- **`confirm_action`**: The `confirm_action` function is called with an additional `default=False` argument for the "Erase old DB and start fresh?" prompt. This sets the default option to "No."
+
+This change ensures that the default behavior is safer, preventing accidental data loss by requiring explicit confirmation to erase the database.
+
+---
+
+_**User**_
+
+Fix this to match
+
+---
+
+_**Assistant**_
+
+To ensure that the `confirm_action` function in `ui.py` supports a default value for the confirmation prompt, you need to modify the function to accept a `default` parameter and pass it to the `questionary.confirm` function. This will allow you to specify whether the default response should be "Yes" or "No."
+
+### Update `ui.py`
+
+Here's how you can update the `confirm_action` function to include a `default` parameter:
+
+```python:src/blogscraper/ui.py
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
+
+from blogscraper.types import Scraper
+
+console = Console()
+
+def display_welcome() -> None:
+    console.print(
+        Panel(
+            """Welcome to the Blog Scraper!
+
+This tool gathers and summarizes several popular AI-related blogs,
+using a variety of web-scraping and AI tools.
+
+Started March 2025, by David Goldfarb. Questions to deg@degel.com
+    """,
+            title="Blog Scraper",
+        )
+    )
+
+def confirm_action(message: str, default: bool = True) -> bool:
+    response = questionary.confirm(message, auto_enter=False, default=default).ask()
+    return bool(response)
+
+def select_scrapers(scrapers: list[Scraper]) -> list[str]:
+    response = questionary.checkbox(
+        "Select sites to scrape:",
+        choices=[
+            Choice(scraper.name, value=str(index), checked=True)
+            for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+    return list(response)
+
+def input_lookback_days() -> int:
+    while True:
+        try:
+            return int(questionary.text("Enter the number of days to look back:").ask())
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+```
+
+### Explanation
+
+- **`default` Parameter**: Added a `default` parameter to the `confirm_action` function, which is passed to `questionary.confirm`. This parameter determines the default choice for the confirmation prompt.
+- **Usage**: In `main.py`, you can now specify `default=False` when calling `confirm_action` to make "No" the default option.
+
+This update ensures that the confirmation prompt can be customized to default to either "Yes" or "No" based on the context in which it is used.
+
+---
+
+_**User**_
+
+Convert the page content to  formatted text or Markdown?
+
+---
+
+_**Assistant**_
+
+To convert the page content to formatted text or Markdown, you can use the `markdownify` library, which converts HTML content to Markdown. This can be particularly useful if you want to display the content in a more readable format.
+
+Here's how you can update the `show_page_content` function in `content_viewer.py` to convert HTML to Markdown:
+
+### Update `content_viewer.py`
+
+First, ensure you have the `markdownify` library installed. You can install it using pip:
+
+```bash
+pip install markdownify
+```
+
+Then, update the `show_page_content` function:
+
+```python:src/blogscraper/content_viewer.py
+import requests
+from bs4 import BeautifulSoup
+from rich.console import Console
+from rich.panel import Panel
+from markdownify import markdownify as md
+
+console = Console()
+
+def show_page_content(url: str) -> None:
+    """
+    Fetch and display the content of a webpage as Markdown.
+
+    Args:
+        url (str): The URL of the webpage to fetch.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        html_content = str(soup)
+        markdown_content = md(html_content)
+        console.print(Panel(markdown_content, title=f"Content of {url}"))
+    except requests.RequestException as e:
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+```
+
+### Explanation
+
+- **`markdownify`**: The `markdownify` function is used to convert the HTML content of the page to Markdown format.
+- **Display**: The converted Markdown content is displayed using a `Panel` from the `rich` library, which supports rich text formatting.
+
+This approach provides a more readable and structured view of the webpage content, leveraging Markdown's formatting capabilities.
+
+---
+
+_**User**_
+
+This retains too many runs of blank lines
+
+---
+
+_**Assistant**_
+
+To address the issue of excessive blank lines in the converted Markdown content, you can use the `markdownify` library's options to customize the conversion process. Specifically, you can adjust the `strip` option to remove extra whitespace.
+
+Here's how you can update the `show_page_content` function to handle this:
+
+### Update `content_viewer.py`
+
+```python:src/blogscraper/content_viewer.py
+import requests
+from bs4 import BeautifulSoup
+from rich.console import Console
+from rich.panel import Panel
+from markdownify import markdownify as md
+
+console = Console()
+
+def show_page_content(url: str) -> None:
+    """
+    Fetch and display the content of a webpage as Markdown.
+
+    Args:
+        url (str): The URL of the webpage to fetch.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        html_content = str(soup)
+        # Convert HTML to Markdown, stripping extra whitespace
+        markdown_content = md(html_content, strip=['a', 'p', 'div', 'span'])
+        # Remove excessive blank lines
+        markdown_content = '\n'.join(line for line in markdown_content.splitlines() if line.strip())
+        console.print(Panel(markdown_content, title=f"Content of {url}"))
+    except requests.RequestException as e:
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+```
+
+### Explanation
+
+- **`strip` Option**: The `strip` option in `markdownify` is used to remove specific HTML tags that might contribute to excessive whitespace. You can adjust the list of tags to suit your needs.
+- **Remove Excessive Blank Lines**: After converting to Markdown, a list comprehension is used to filter out lines that are entirely whitespace, reducing the number of blank lines in the output.
+
+This approach should help produce cleaner Markdown output with fewer unnecessary blank lines. Adjust the `strip` list as needed based on the specific HTML structure of the pages you're working with.
+
+---
+
+_**User**_
+
+That stripped too aggressively.  I'm fine with up to one blank line between paragraphs; this adds to readability.
+I jsut want to reduce the long runs.
+
+---
+
+_**Assistant**_
+
+To allow up to one blank line between paragraphs while reducing longer runs of blank lines, you can modify the logic that processes the Markdown content. Instead of removing all blank lines, you can ensure that no more than one consecutive blank line is present.
+
+Here's how you can update the `show_page_content` function to achieve this:
+
+### Update `content_viewer.py`
+
+```python:src/blogscraper/content_viewer.py
+import requests
+from bs4 import BeautifulSoup
+from rich.console import Console
+from rich.panel import Panel
+from markdownify import markdownify as md
+
+console = Console()
+
+def show_page_content(url: str) -> None:
+    """
+    Fetch and display the content of a webpage as Markdown.
+
+    Args:
+        url (str): The URL of the webpage to fetch.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        html_content = str(soup)
+        # Convert HTML to Markdown
+        markdown_content = md(html_content)
+        # Allow up to one blank line between paragraphs
+        lines = markdown_content.splitlines()
+        cleaned_lines = []
+        blank_line = False
+        for line in lines:
+            if line.strip():
+                cleaned_lines.append(line)
+                blank_line = False
+            elif not blank_line:
+                cleaned_lines.append(line)
+                blank_line = True
+        cleaned_markdown_content = '\n'.join(cleaned_lines)
+        console.print(Panel(cleaned_markdown_content, title=f"Content of {url}"))
+    except requests.RequestException as e:
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+```
+
+### Explanation
+
+- **Markdown Conversion**: The HTML content is converted to Markdown using `markdownify`.
+- **Blank Line Management**: The logic iterates over the lines of the Markdown content, allowing only one consecutive blank line. This is done by tracking whether the last line added was a blank line and only adding another blank line if the previous line was not blank.
+
+This approach should help maintain readability by allowing a single blank line between paragraphs while preventing long runs of blank lines.
+
+---
+
+_**User**_
+
+That code works, but is verbose. Write it more pythonically
+
+---
+
+_**Assistant**_
+
+Certainly! We can make the code more concise by using a generator expression to handle the blank line logic. Here's a more Pythonic version of the `show_page_content` function:
+
+### Updated `content_viewer.py`
+
+```python:src/blogscraper/content_viewer.py
+import requests
+from bs4 import BeautifulSoup
+from rich.console import Console
+from rich.panel import Panel
+from markdownify import markdownify as md
+
+console = Console()
+
+def show_page_content(url: str) -> None:
+    """
+    Fetch and display the content of a webpage as Markdown.
+
+    Args:
+        url (str): The URL of the webpage to fetch.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "html.parser")
+        html_content = str(soup)
+        # Convert HTML to Markdown
+        markdown_content = md(html_content)
+        # Allow up to one blank line between paragraphs
+        cleaned_lines = []
+        for line in markdown_content.splitlines():
+            if line.strip() or (cleaned_lines and cleaned_lines[-1]):
+                cleaned_lines.append(line)
+        cleaned_markdown_content = '\n'.join(cleaned_lines)
+        console.print(Panel(cleaned_markdown_content, title=f"Content of {url}"))
+    except requests.RequestException as e:
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+```
+
+### Explanation
+
+- **Generator Expression**: The logic for managing blank lines is simplified by checking if the current line is not empty or if the last line added to `cleaned_lines` is not empty. This ensures that no more than one consecutive blank line is added.
+- **Conciseness**: The code is more concise and easier to read, while still maintaining the desired functionality of allowing up to one blank line between paragraphs.
+
+---
+
+_**User**_
+
+This is getting better, but I'd like to show only the main text. Use a library like trafilatura (or whatever is best) to do so.
+
+---
+
+_**Assistant**_
+
+To extract the main text content from a webpage, you can use the `trafilatura` library, which is designed for web scraping and extracting readable content from web pages. This library is particularly effective at filtering out non-essential elements like ads, navigation bars, and other extraneous content.
+
+Here's how you can update your `show_page_content` function to use `trafilatura`:
+
+### Step 1: Install `trafilatura`
+
+First, ensure you have the `trafilatura` library installed. You can install it using pip:
+
+```bash
+pip install trafilatura
+```
+
+### Step 2: Update `content_viewer.py`
+
+Here's how you can update the `show_page_content` function to use `trafilatura`:
+
+```python:src/blogscraper/content_viewer.py
+import requests
+from rich.console import Console
+from rich.panel import Panel
+from markdownify import markdownify as md
+import trafilatura
+
+console = Console()
+
+def show_page_content(url: str) -> None:
+    """
+    Fetch and display the main content of a webpage as Markdown.
+
+    Args:
+        url (str): The URL of the webpage to fetch.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        # Use trafilatura to extract the main content
+        downloaded = trafilatura.fetch_url(url)
+        if downloaded:
+            main_content = trafilatura.extract(downloaded)
+            if main_content:
+                # Convert the main content to Markdown
+                markdown_content = md(main_content)
+                # Allow up to one blank line between paragraphs
+                cleaned_lines = []
+                for line in markdown_content.splitlines():
+                    if line.strip() or (cleaned_lines and cleaned_lines[-1]):
+                        cleaned_lines.append(line)
+                cleaned_markdown_content = "\n".join(cleaned_lines)
+                console.print(Panel(cleaned_markdown_content, title=f"Content of {url}"))
+            else:
+                console.print(f"[yellow]No main content found for {url}.[/yellow]")
+        else:
+            console.print(f"[red]Failed to download content from {url}.[/red]")
+    except requests.RequestException as e:
+        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+```
+
+### Explanation
+
+- **`trafilatura.fetch_url`**: This function downloads the webpage content.
+- **`trafilatura.extract`**: This function extracts the main readable content from the downloaded HTML.
+- **Markdown Conversion**: The extracted main content is converted to Markdown using `markdownify`.
+- **Blank Line Management**: The logic for managing blank lines remains the same, ensuring readability.
+
+This approach should help you display only the main text content of a webpage, making the output more focused and relevant.
+
+---
+
+_**User**_
+
+Have default of 7
+
+---
+
+_**Assistant**_
+
+To set a default value of 7 for the number of lookback days in the `input_lookback_days` function, you can modify the function to provide this default when the user does not input a value. Here's how you can update the function:
+
+### Update `ui.py`
+
+```python:src/blogscraper/ui.py
+import questionary
+from questionary import Choice
+from rich.console import Console
+from rich.panel import Panel
+
+from blogscraper.types import Scraper
+
+console = Console()
+
+def display_welcome() -> None:
+    console.print(
+        Panel(
+            """Welcome to the Blog Scraper!
+
+This tool gathers and summarizes several popular AI-related blogs,
+using a variety of web-scraping and AI tools.
+
+Started March 2025, by David Goldfarb. Questions to deg@degel.com
+    """,
+            title="Blog Scraper",
+        )
+    )
+
+def confirm_action(message: str, default: bool = True) -> bool:
+    response = questionary.confirm(message, auto_enter=False, default=default).ask()
+    return bool(response)
+
+def select_scrapers(scrapers: list[Scraper]) -> list[str]:
+    response = questionary.checkbox(
+        "Select sites to scrape:",
+        choices=[
+            Choice(scraper.name, value=str(index), checked=True)
+            for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+    return list(response)
+
+def input_lookback_days() -> int:
+    while True:
+        try:
+            response = questionary.text("Enter the number of days to look back (default is 7):").ask()
+            if not response.strip():
+                return 7
+            return int(response)
+        except ValueError:
+            console.print("[red]Please enter a valid number.[/red]")
+```
+
+### Explanation
+
+- **Default Value**: The function now prompts the user with a message indicating that the default is 7 days. If the user presses enter without typing a number, the function returns 7.
+- **Input Handling**: The function checks if the response is empty (i.e., the user pressed enter without input) and returns the default value of 7 in that case.
+
+This change ensures that the function defaults to 7 days if the user does not provide a specific input, making the tool more user-friendly.
+
+---
+
 
 
 ---
