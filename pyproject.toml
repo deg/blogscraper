@@ -15,7 +15,8 @@ dependencies = [
   "requests==2.32.3",
   "beautifulsoup4==4.11.1",
   "questionary==2.1.0",
-  "rich==13.9.4"
+  "rich==13.9.4",
+  "markdownify==1.0.0",
 ]
 
 [project.optional-dependencies]
