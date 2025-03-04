@@ -34,25 +34,29 @@ def main() -> None:
             clear_stored_urls()
         selected_sites = select_scrapers(SCRAPERS)
         results = run_scrapers(selected_sites, SCRAPERS)
+        all_urls = results["all_urls"]
     else:
-        results = {"existing_urls": load_stored_urls()}
+        all_urls = load_stored_urls()
+
+    lookback_days = input_lookback_days()
+    recent = recent_urls(all_urls, lookback_days)
 
     view_contents = confirm_action(
         "Do you want to see the page contents of recent blogs?"
     )
-    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
-
-    if not view_contents and not generate_prompt:
-        return
-
-    lookback_days = input_lookback_days()
-    recent = recent_urls(results["existing_urls"], lookback_days)
-
     if view_contents:
         for url_dict in recent:
             if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
                 show_page_content(url_dict["url"])
 
+    generate_list = confirm_action(
+        "Do you want a list of the URLs (e.g., to pass to Notebook LM)"
+    )
+    if generate_list:
+        for url_dict in recent:
+            print(f"{url_dict['url']}")
+
+    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
     if generate_prompt:
         print(f"{PROMPT_PREFIX}\n\n{generate_title_list(recent)}\n\n{PROMPT_SUFFIX}")
 

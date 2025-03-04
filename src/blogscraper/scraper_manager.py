@@ -28,4 +28,5 @@ def run_scrapers(
         "all_new_urls": all_new_urls,
         "unique_new_urls": unique_new_urls,
         "existing_urls": existing_urls,
+        "all_urls": existing_urls + unique_new_urls,
     }

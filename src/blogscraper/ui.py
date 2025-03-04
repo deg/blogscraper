@@ -42,6 +42,11 @@ def select_scrapers(scrapers: list[Scraper]) -> list[str]:
 def input_lookback_days() -> int:
     while True:
         try:
-            return int(questionary.text("Enter the number of days to look back:").ask())
+            response = questionary.text(
+                "Enter the number of days to look back (default is 7):"
+            ).ask()
+            if not response.strip():
+                return 7
+            return int(response)
         except ValueError:
             console.print("[red]Please enter a valid number.[/red]")
