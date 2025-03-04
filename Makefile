@@ -49,7 +49,7 @@ update:
 # Install dependencies from poetry.lock
 .PHONY: install
 install:
-	poetry install
+	poetry install --extras dev
 
 
 # List all outdated dependencies (direct dependencies only)
