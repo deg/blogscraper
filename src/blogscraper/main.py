@@ -37,7 +37,9 @@ def main() -> None:
     else:
         results = {"existing_urls": load_stored_urls()}
 
-    view_contents = confirm_action("Do you want to see the page contents?")
+    view_contents = confirm_action(
+        "Do you want to see the page contents of recent blogs?"
+    )
     generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
 
     if not view_contents and not generate_prompt:
