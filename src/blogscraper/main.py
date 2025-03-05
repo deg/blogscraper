@@ -15,6 +15,7 @@ from blogscraper.ui import (
     input_lookback_days,
     select_scrapers,
 )
+from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
 from blogscraper.utils.storage import clear_stored_urls, load_stored_urls
 
 SCRAPERS = [
@@ -60,6 +61,14 @@ def main() -> None:
     if generate_list:
         for url_dict in recent:
             console.print(f"[blue3]{url_dict['url']}[/blue3]")
+
+    if generate_list:
+        text = ""
+        for url_dict in recent:
+            text += f"Blog URL: {url_dict['url']}\n"
+        doc_id, doc_url = create_google_doc("This is a toy")
+        write_to_google_doc(doc_id, text)
+        console.print(f"[red]Created Google doc: {doc_url}[/red]")
 
     generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
     if generate_prompt:

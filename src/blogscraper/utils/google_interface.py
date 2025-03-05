@@ -1,73 +1,59 @@
-import os
 from pathlib import Path
+from typing import Any
 
-from dotenv import load_dotenv
-from google.oauth2 import service_account
+from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
-
-def find_project_root(start_path: Path) -> Path:
-    for parent in start_path.resolve().parents:
-        if (parent / "Makefile").exists():
-            return parent
-    raise FileNotFoundError("Could not find project root")
+from blogscraper.utils.sys_utils import find_project_root, get_env_secret
 
 
-PROJECT_ROOT = find_project_root(Path(__file__))
-ENV_SECRET_PATH = PROJECT_ROOT / ".env.secret"
+def get_service_account_path() -> Path:
+    service_account_file = get_env_secret("GOOGLE_SERVICE_ACCOUNT_FILE")
+    if not service_account_file:
+        raise ValueError("GOOGLE_SERVICE_ACCOUNT_FILE is not set in .env.secret")
+    path = find_project_root() / service_account_file
 
-if not ENV_SECRET_PATH.exists():
-    raise FileNotFoundError(f"Missing .env.secret file at {ENV_SECRET_PATH}")
+    if not path.exists():
+        raise FileNotFoundError(f"Service account file not found: {path}")
 
-load_dotenv(ENV_SECRET_PATH)
+    return path
 
-SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE")
-if not SERVICE_ACCOUNT_FILE:
-    raise ValueError("GOOGLE_SERVICE_ACCOUNT_FILE is not set in .env.secret")
 
-SERVICE_ACCOUNT_FILE_PATH = PROJECT_ROOT / SERVICE_ACCOUNT_FILE
-
-if not SERVICE_ACCOUNT_FILE_PATH.exists():
-    raise FileNotFoundError(
-        f"Service account file not found: {SERVICE_ACCOUNT_FILE_PATH}"
+def get_services() -> Any:
+    scopes = [
+        "https://www.googleapis.com/auth/drive",
+        "https://www.googleapis.com/auth/documents",
+    ]
+    creds = Credentials.from_service_account_file(  # type: ignore[no-untyped-call]
+        str(get_service_account_path()), scopes=scopes
+    )
+    return (
+        build("drive", "v3", credentials=creds),
+        build("docs", "v1", credentials=creds),
     )
 
-SCOPES = [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/documents",
-]
 
-# Authenticate and build the service clients
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
-drive_service = build("drive", "v3", credentials=credentials)
-docs_service = build("docs", "v1", credentials=credentials)
+DRIVE_SERVICE, DOCS_SERVICE = get_services()
 
-print(f"SERVICES:\n\n{drive_service}\n\n{docs_service}")
 
-# Step 1: Create a new Google Doc
-document = docs_service.documents().create(body={"title": "My New Document"}).execute()
-doc_id = document["documentId"]
-print(f"Created Document ID: {doc_id}")
+def create_google_doc(title: str) -> str:
+    document = DOCS_SERVICE.documents().create(body={"title": title}).execute()
+    doc_id = document["documentId"]
+    permission = {"type": "anyone", "role": "reader"}
+    DRIVE_SERVICE.permissions().create(fileId=doc_id, body=permission).execute()
+    doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
+    return doc_id, doc_url
 
-# Step 2: Add text to the Google Doc
-requests = [
-    {
-        "insertText": {
-            "location": {"index": 1},
-            "text": "Hello, this is a test document.\n",
+
+def write_to_google_doc(doc_id: str, text: str) -> None:
+    requests = [
+        {
+            "insertText": {
+                "location": {"index": 1},
+                "text": text,
+            }
         }
-    }
-]
-docs_service.documents().batchUpdate(
-    documentId=doc_id, body={"requests": requests}
-).execute()
-
-# Step 3: Make the document publicly viewable
-permission = {"type": "anyone", "role": "reader"}
-drive_service.permissions().create(fileId=doc_id, body=permission).execute()
-
-# Step 4: Get the URL of the document
-doc_url = f"https://docs.google.com/document/d/{doc_id}/edit"
-print(f"Document URL: {doc_url}")
+    ]
+    DOCS_SERVICE.documents().batchUpdate(
+        documentId=doc_id, body={"requests": requests}
+    ).execute()

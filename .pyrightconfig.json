@@ -1,0 +1,9 @@
+{
+    "exclude": ["**/venv", "**/build", "**/__pycache__"],
+    "reportAttributeAccessIssue": false,
+    "reportUnknownMemberType": true,
+    "reportMissingImports": false,
+    "reportPrivateUsage": true,
+    "pythonVersion": "3.11",
+    "typeCheckingMode": "strict"
+}
