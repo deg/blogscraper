@@ -10,6 +10,7 @@ from blogscraper.scrapers.thezvi import scrape_thezvi
 from blogscraper.types import Scraper, URLDict
 from blogscraper.ui import (
     confirm_action,
+    console,
     display_welcome,
     input_lookback_days,
     select_scrapers,
@@ -54,11 +55,15 @@ def main() -> None:
     )
     if generate_list:
         for url_dict in recent:
-            print(f"{url_dict['url']}")
+            console.print(f"[blue3]{url_dict['url']}[/blue3]")
 
     generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
     if generate_prompt:
-        print(f"{PROMPT_PREFIX}\n\n{generate_title_list(recent)}\n\n{PROMPT_SUFFIX}")
+        console.print(
+            f"[grey19]{PROMPT_PREFIX}\n\n"
+            + f"{generate_title_list(recent)}\n\n"
+            + f"{PROMPT_SUFFIX}[/grey19]"
+        )
 
 
 def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
