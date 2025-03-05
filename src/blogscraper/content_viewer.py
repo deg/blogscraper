@@ -4,7 +4,7 @@ import trafilatura
 from blogscraper.ui import console
 
 
-def show_page_content(url: str, to_string: bool = False) -> str | None:
+def show_page_content(url: str, to_string: bool = False) -> str:
     """
     Fetches, formats, and displays webpage content.
 
@@ -22,7 +22,7 @@ def show_page_content(url: str, to_string: bool = False) -> str | None:
         return formatted_content
     else:
         console.print(formatted_content)
-        return None
+        return ""
 
 
 def fetch_page_content(url: str) -> str | None:

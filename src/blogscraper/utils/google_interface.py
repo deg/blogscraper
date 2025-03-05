@@ -36,7 +36,7 @@ def get_services() -> Any:
 DRIVE_SERVICE, DOCS_SERVICE = get_services()
 
 
-def create_google_doc(title: str) -> str:
+def create_google_doc(title: str) -> tuple[str, str]:
     document = DOCS_SERVICE.documents().create(body={"title": title}).execute()
     doc_id = document["documentId"]
     permission = {"type": "anyone", "role": "reader"}
