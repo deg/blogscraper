@@ -14,6 +14,7 @@ from blogscraper.ui import (
     display_welcome,
     input_lookback_days,
     select_scrapers,
+    select_urls,
 )
 from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
 from blogscraper.utils.storage import clear_stored_urls, load_stored_urls
@@ -34,6 +35,8 @@ def main() -> None:
         delete_old = confirm_action("Erase old DB and start fresh?", default=False)
         if delete_old:
             clear_stored_urls()
+        # [TODO] Fix select_scrapers to be like select_urls,
+        #        rather than using enumerate
         selected_sites = select_scrapers(SCRAPERS)
         results = run_scrapers(selected_sites, SCRAPERS)
         all_urls = results["all_urls"]
@@ -53,20 +56,33 @@ def main() -> None:
     if view_contents:
         for url_dict in recent:
             if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
-                show_page_content(url_dict["url"])
+                show_page_content(url_dict["url"], to_string=False)
 
     generate_list = confirm_action(
-        "Do you want a list of the URLs (e.g., to pass to Notebook LM)"
+        "Do you want a list of the URLs (e.g., to pass to Notebook LM)?"
     )
     if generate_list:
         for url_dict in recent:
             console.print(f"[blue3]{url_dict['url']}[/blue3]")
 
-    if generate_list:
-        text = ""
-        for url_dict in recent:
-            text += f"Blog URL: {url_dict['url']}\n"
-        doc_id, doc_url = create_google_doc("This is a toy")
+    generate_url_list = confirm_action(
+        "Do you want to generate a consolidated document?"
+    )
+    if generate_url_list:
+        selected_urls = select_urls(recent)
+        text = (
+            "<!-- This document is a set of very recent"
+            + "blog posts focused on AI innovations -->\n\n"
+            + "<!-- TABLE OF CONTENTS -->\n\n"
+        )
+        for url in selected_urls:
+            text += f"{url}\n"
+        text += "\n\n"
+
+        for url in selected_urls:
+            text += show_page_content(url, to_string=True)
+
+        doc_id, doc_url = create_google_doc(f"BlogScraper document of {datetime.now()}")
         write_to_google_doc(doc_id, text)
         console.print(f"[red]Created Google doc: {doc_url}[/red]")
 

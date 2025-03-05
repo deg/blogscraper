@@ -3,7 +3,7 @@ from questionary import Choice
 from rich.console import Console
 from rich.panel import Panel
 
-from blogscraper.types import Scraper
+from blogscraper.types import Scraper, URLDict
 
 console = Console()
 
@@ -34,6 +34,17 @@ def select_scrapers(scrapers: list[Scraper]) -> list[str]:
         choices=[
             Choice(scraper.name, value=str(index), checked=True)
             for index, scraper in enumerate(scrapers)
+        ],
+    ).ask()
+    return list(response)
+
+
+def select_urls(urlDicts: list[URLDict]) -> list[str]:
+    response = questionary.checkbox(
+        "Select blog URLs to save:",
+        choices=[
+            Choice(urlDict["url"], value=urlDict["url"], checked=True)
+            for urlDict in urlDicts
         ],
     ).ask()
     return list(response)
