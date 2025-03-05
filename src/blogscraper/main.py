@@ -42,6 +42,10 @@ def main() -> None:
     lookback_days = input_lookback_days()
     recent = recent_urls(all_urls, lookback_days)
 
+    if not recent:
+        console.print("[red]No posts in the selected time period.[/red]")
+        return
+
     view_contents = confirm_action(
         "Do you want to see the page contents of recent blogs?"
     )
