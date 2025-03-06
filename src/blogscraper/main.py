@@ -23,9 +23,11 @@ from blogscraper.ui import (
     confirm_action,
     console,
     display_welcome,
+    infostr,
     input_date,
     select_scrapers,
     select_urls,
+    warnstr,
 )
 from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
 from blogscraper.utils.storage import clear_stored_urls, load_stored_urls
@@ -43,7 +45,7 @@ def main() -> None:
     """Starts the Blogscraper CLI and handles user interactions."""
     display_welcome()
 
-    scrape = confirm_action("Do you want to scrape new URLs?")
+    scrape = confirm_action("Scrape websites for new URLs?")
     if scrape:
         delete_old = confirm_action("Erase old DB and start fresh?", default=False)
         if delete_old:
@@ -58,33 +60,31 @@ def main() -> None:
 
     today = datetime.today()
     last_week = today - timedelta(days=7)
-    start_day = input_date("First day to collect", last_week)
-    end_day = input_date("Last day to collect", today)
-    recent = recent_urls(all_urls, start_day, end_day)
+    start_day = input_date("First day to analyze", last_week)
+    end_day = input_date("Last day to analyze", today)
+    ranged_urls = get_range_of_urls(all_urls, start_day, end_day)
 
-    if not recent:
-        console.print("[red]No posts in the selected time period.[/red]")
+    if not ranged_urls:
+        console.print(warnstr("No posts in the selected time period."))
         return
 
-    view_contents = confirm_action(
-        "Do you want to see the page contents of recent blogs?"
-    )
+    view_contents = confirm_action("Display contents of selected blogs?")
     if view_contents:
-        for url_dict in recent:
-            if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
+        for url_dict in ranged_urls:
+            if confirm_action(f"See content of {url_dict['url']}?"):
                 show_page_content(url_dict["url"], to_string=False)
 
-    generate_list = confirm_action("Do you want a list of the URLs?")
+    generate_list = confirm_action("Display a list of the URLs?")
     if generate_list:
-        for url_dict in recent:
+        for url_dict in ranged_urls:
             console.print(f"[blue3]{url_dict['url']}[/blue3]")
 
-    generate_doc = confirm_action("Do you want to generate a consolidated document?")
+    generate_doc = confirm_action("Generate a consolidated Google Doc?")
     if generate_doc:
-        selected_urls = select_urls(recent)
+        selected_urls = select_urls(ranged_urls)
         text = (
-            "<!-- This document is a set of very recent"
-            + "blog posts focused on AI innovations -->\n\n"
+            "<!-- This document is a set of blog posts "
+            + "focused on AI innovations -->\n\n"
             + "<!-- TABLE OF CONTENTS -->\n\n"
         )
         for url in selected_urls:
@@ -98,18 +98,18 @@ def main() -> None:
         human_end = datestring(end_day, human=True)
         doc_id, doc_url = create_google_doc(f"{human_start} - {human_end} blog scrape")
         write_to_google_doc(doc_id, text)
-        console.print(f"[red]Created Google doc: {doc_url}[/red]")
+        console.print(infostr(f"Created Google doc: {doc_url}"))
 
-    generate_prompt = confirm_action("Do you want to generate an LLM prompt?")
+    generate_prompt = confirm_action("Generate an ad-hoc LLM prompt?")
     if generate_prompt:
         console.print(
             f"[grey19]{PROMPT_PREFIX}\n\n"
-            + f"{generate_title_list(recent)}\n\n"
+            + f"{generate_title_list(ranged_urls)}\n\n"
             + f"{PROMPT_SUFFIX}[/grey19]"
         )
 
 
-def recent_urls(
+def get_range_of_urls(
     urls: list[URLDict], first_date: datetime, last_date: datetime
 ) -> list[URLDict]:
     """Filters URLs collected within the specified date range (inclusive).
@@ -125,15 +125,15 @@ def recent_urls(
     first_date = first_date.replace(hour=0, minute=0, second=0)
     last_date = last_date.replace(hour=23, minute=59, second=59)
 
-    recent = [
+    ranged_urls = [
         url_dict
         for url_dict in urls
         if first_date <= datetime.fromisoformat(url_dict["creation_date"]) <= last_date
     ]
 
     # Sort the URLs by creation_date, earliest first
-    recent.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
-    return recent
+    ranged_urls.sort(key=lambda x: datetime.fromisoformat(x["creation_date"]))
+    return ranged_urls
 
 
 def generate_title_list(urls: list[URLDict]) -> str:
