@@ -26,6 +26,16 @@ class URLDict(TypedDict):
     harvest_timestamp: str
 
 
+class GDoc(TypedDict):
+    """Represents metadata for a Google Document."""
+
+    id: str
+    name: str
+    createdTime: str
+    modifiedTime: str
+    url: str
+
+
 @dataclass
 class Scraper:
     """Represents a blog scraper with a name and associated scraping function.

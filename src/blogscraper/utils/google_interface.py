@@ -20,12 +20,14 @@ Key steps:
 
 """
 
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
+from blogscraper.types import GDoc
 from blogscraper.utils.sys_utils import find_project_root, get_env_secret
 
 
@@ -107,3 +109,67 @@ def write_to_google_doc(doc_id: str, text: str) -> None:
     DOCS_SERVICE.documents().batchUpdate(
         documentId=doc_id, body={"requests": requests}
     ).execute()
+
+
+def list_service_account_docs() -> list[GDoc]:
+    """Lists all Google Docs owned by the service account with metadata.
+
+    Returns:
+        list[GDoc]: A list of Google Docs with their metadata.
+    """
+    fields = ["id", "name", "createdTime", "modifiedTime"]
+
+    try:
+        results = (
+            DRIVE_SERVICE.files()
+            .list(
+                q="mimeType='application/vnd.google-apps.document'",
+                fields=f"files({', '.join(fields)})",
+            )
+            .execute()
+        )
+
+        files = results.get("files", [])
+
+        if not files:
+            print("No documents found.")
+            return []
+
+        docs = [
+            GDoc(
+                id=file["id"],
+                name=file["name"],
+                createdTime=file["createdTime"],
+                modifiedTime=file["modifiedTime"],
+                url=f"https://docs.google.com/document/d/{file['id']}/edit",
+            )
+            for file in files
+        ]
+
+        docs.sort(
+            key=lambda doc: datetime.fromisoformat(doc["createdTime"].rstrip("Z"))
+        )
+        return docs
+
+    except Exception as e:
+        print(f"❌ Error retrieving documents: {e}")
+        return []
+
+
+def delete_service_account_doc(doc_id: str, name: str) -> bool:
+    """Deletes a Google Document by its ID.
+
+    Args:
+        doc_id (str): The ID of the Google Document.
+        name (str): The name of the document (for logging purposes).
+
+    Returns:
+        bool: True if the document was successfully deleted, False otherwise.
+    """
+    try:
+        DRIVE_SERVICE.files().delete(fileId=doc_id).execute()
+        print(f"✅ Successfully deleted '{name}'")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to delete '{name}' (ID: {doc_id}): {e}")
+        return False
