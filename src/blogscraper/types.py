@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Callable, TypedDict
 
 
+# [TODO] Convert this to a dataclass too
 class URLDict(TypedDict):
     """Represents structured metadata for a scraped blog URL.
 
@@ -26,7 +27,8 @@ class URLDict(TypedDict):
     harvest_timestamp: str
 
 
-class GDoc(TypedDict):
+@dataclass
+class GDoc:
     """Represents metadata for a Google Document."""
 
     id: str

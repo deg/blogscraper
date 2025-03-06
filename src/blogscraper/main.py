@@ -136,7 +136,7 @@ def main() -> None:
     if all_old_google_docs and confirm_action("Delete some old Google Docs?"):
         doc_ids_to_delete = select_google_docs(all_old_google_docs, "delete")
         for doc in doc_ids_to_delete:
-            delete_service_account_doc(doc["id"], doc["name"])
+            delete_service_account_doc(doc.id, doc.name)
 
 
 def get_range_of_urls(
