@@ -1,3 +1,13 @@
+"""Module for fetching and displaying webpage content.
+
+Uses Trafilatura to extract main content from web pages and formats it
+for display in the terminal.
+
+Usage:
+    This module provides functions to retrieve and present content from
+    specified URLs, either returning it as a string or printing it directly.
+"""
+
 import requests
 import trafilatura
 
@@ -5,15 +15,14 @@ from blogscraper.ui import console
 
 
 def show_page_content(url: str, to_string: bool = False) -> str:
-    """
-    Fetches, formats, and displays webpage content.
+    """Fetches, formats, and displays webpage content.
 
     Args:
         url (str): The URL of the webpage.
         to_string (bool): If True, returns the output as a string instead of printing.
 
     Returns:
-        Optional[str]: The formatted content if `to_string` is True, otherwise None.
+        str: The formatted content if `to_string` is True, otherwise an empty string.
     """
     content = fetch_page_content(url)
     formatted_content = format_page_content(url, content)
@@ -26,14 +35,13 @@ def show_page_content(url: str, to_string: bool = False) -> str:
 
 
 def fetch_page_content(url: str) -> str | None:
-    """
-    Fetches and extracts the main content of a webpage as Markdown.
+    """Fetches and extracts the main content of a webpage as Markdown.
 
     Args:
         url (str): The URL of the webpage to fetch.
 
     Returns:
-        Optional[str]: Extracted content as Markdown, or None if extraction fails.
+        str | None: Extracted content as Markdown, or None if extraction fails.
     """
     try:
         # Use trafilatura to extract the main content
@@ -63,12 +71,11 @@ def fetch_page_content(url: str) -> str | None:
 
 
 def format_page_content(url: str, content: str | None) -> str:
-    """
-    Formats the extracted content into a structured string for display.
+    """Formats the extracted content into a structured string for display.
 
     Args:
         url (str): The URL of the webpage.
-        content (Optional[str]): The extracted content.
+        content (str | None): The extracted content.
 
     Returns:
         str: Formatted content string.
@@ -91,8 +98,7 @@ def format_page_content(url: str, content: str | None) -> str:
 
 
 def split_headers_body(text: str) -> tuple[str, str]:
-    """
-    Splits the given text into a YAML-like header and the body.
+    """Splits the given text into a YAML-like header and the body.
 
     Args:
         text (str): The input text containing a header and body.

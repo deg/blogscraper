@@ -1,3 +1,13 @@
+"""Defines LLM prompt templates for summarizing blog posts.
+
+Provides predefined prompt text that instructs language models to analyze and
+summarize AI and software development blog posts.
+
+Usage:
+    Import these constants to include structured prompts when generating LLM
+    input data.
+"""
+
 # Allow long lines
 # flake8: noqa: E501
 
@@ -9,7 +19,6 @@ Here are some very recent blog posts, focused on AI and software development. Ea
 """
 
 PROMPT_SUFFIX = """
-
 ## Your Task:
 
 Read the blog post webpages referenced by each of these URLs.

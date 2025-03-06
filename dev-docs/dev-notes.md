@@ -12,3 +12,7 @@ the smoothest to integrate with a Python workflow.  Other useful tools include
 ### Scraping websites
 
 See [Firecrawl](https://www.firecrawl.dev/), though it has only a minimal free tier.
+
+We're now using [Trafilatura](https://trafilatura.readthedocs.io/en/latest/index.html)
+which seems to be excellent and to have capabilities that we've not yet explored.
+

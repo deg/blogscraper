@@ -1,3 +1,13 @@
+"""Utility functions for scraping and processing URLs from various blogs.
+
+Provides helper functions to fetch and parse blog URLs using BeautifulSoup,
+and to normalize and store extracted data.
+
+Usage:
+    These functions are primarily used by blog-specific scraper modules to
+    extract structured data from HTML pages.
+"""
+
 from datetime import datetime, timezone
 from typing import Callable, List
 
@@ -10,17 +20,19 @@ from blogscraper.utils.url_utils import get_html, normalize_url
 def fetch_and_parse_urls(
     base_url: str, selector: str, source: str, date_extractor: Callable[[str], str]
 ) -> List[URLDict]:
-    """
-    Fetches and parses URLs from a given website using a CSS selector.
+    """Finds and extracts URLs from a given webpage using a CSS selector.
 
     Args:
-        base_url (str): The base URL of the website.
-        selector (str): The CSS selector to find links.
-        source (str): The source identifier for the URLs.
-        date_extractor (Callable[[str], str]): Extractor of posting date from URL.
+        base_url (str): The base URL of the blog or archive page.
+        selector (str): The CSS selector to locate article links.
+        source (str): A string identifier for the source site.
+        date_extractor (Callable[[str], str]): Function to extract a post's date from
+                its URL.
 
     Returns:
-        List[URLDict]: A list of URLDict objects with absolute URLs.
+        List[URLDict]: A list of extracted URLDict objects containing
+        URLs, timestamps, and source information.
+
     """
     print(f"Fetching and parsing URLs from {base_url}")
     urls: List[URLDict] = []
