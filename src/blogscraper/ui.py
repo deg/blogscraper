@@ -11,7 +11,7 @@ from questionary import Choice
 from rich.console import Console
 from rich.panel import Panel
 
-from blogscraper.types import Scraper, URLDict
+from blogscraper.types import GDoc, Scraper, URLDict
 
 console = Console()
 
@@ -65,6 +65,31 @@ def select_scrapers(scrapers: list[Scraper]) -> list[str]:
         ],
     ).ask()
     return list(response)
+
+
+def select_google_docs(docs: list[GDoc], action: str) -> list[str]:
+    """Prompts the user to select Google Docs from a list.
+
+    Args:
+        docs (list[GDoc]): A list of Google Documents.
+        action (str): Reason for this list (for prompt).
+
+    Returns:
+        list[str]: A list of selected document IDs.
+    """
+    if not docs:
+        print(f"⚠️ No documents available to {action}.")
+        return []
+
+    response = questionary.checkbox(
+        f"Select Google Docs to {action}:",
+        choices=[
+            Choice(f"{doc['createdTime']} - {doc['name']}", value=doc, checked=False)
+            for doc in docs
+        ],
+    ).ask()
+
+    return response if response else []
 
 
 def select_urls(urlDicts: list[URLDict]) -> list[str]:

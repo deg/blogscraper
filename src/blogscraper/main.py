@@ -25,11 +25,17 @@ from blogscraper.ui import (
     display_welcome,
     infostr,
     input_date,
+    select_google_docs,
     select_scrapers,
     select_urls,
     warnstr,
 )
-from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
+from blogscraper.utils.google_interface import (
+    create_google_doc,
+    delete_service_account_doc,
+    list_service_account_docs,
+    write_to_google_doc,
+)
 from blogscraper.utils.storage import clear_stored_urls, load_stored_urls
 from blogscraper.utils.time_utils import datestring
 
@@ -124,6 +130,12 @@ def main() -> None:
             + f"{generate_title_list(ranged_urls)}\n\n"
             + f"{PROMPT_SUFFIX}[/grey19]"
         )
+
+    all_old_google_docs = list_service_account_docs()
+    if all_old_google_docs and confirm_action("Delete some old Google Docs?"):
+        doc_ids_to_delete = select_google_docs(all_old_google_docs, "delete")
+        for doc in doc_ids_to_delete:
+            delete_service_account_doc(doc["id"], doc["name"])
 
 
 def get_range_of_urls(
