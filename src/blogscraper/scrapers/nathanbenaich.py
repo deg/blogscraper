@@ -1,8 +1,9 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from bs4 import BeautifulSoup, Tag
 
 from blogscraper.types import URLDict
+from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
 
@@ -66,14 +67,12 @@ def extract_urls_from_archive(
             continue
 
         absolute_url = normalize_url(base_url, href)
-        creation_date = datetime.fromisoformat(creation_date_raw.replace("Z", "+00:00"))
-        creation_date_str = creation_date.strftime("%Y-%m-%dT%H:%M:%S%z")
+        creation_date = datetime.fromisoformat(creation_date_raw)
+        creation_date_str = datestring(creation_date)
 
         url_dict: URLDict = {
             "url": absolute_url,
-            "harvest_timestamp": datetime.now(timezone.utc).strftime(
-                "%Y-%m-%dT%H:%M:%S%z"
-            ),
+            "harvest_timestamp": datestring(datetime.now()),
             "source": base_url.split("//")[1].split("/")[0],
             "creation_date": creation_date_str,
         }

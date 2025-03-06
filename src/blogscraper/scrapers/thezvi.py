@@ -1,11 +1,12 @@
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 
 from blogscraper.types import URLDict
 from blogscraper.utils.scraper_utils import fetch_and_parse_urls
+from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
 # Define a constant for the number of threads
@@ -16,8 +17,8 @@ def extract_thezvi_date(url: str) -> str:
     match = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", url)
     if match:
         year, month, day = match.groups()
-        dt_utc = datetime(int(year), int(month), int(day), tzinfo=timezone.utc)
-        return dt_utc.strftime("%Y-%m-%dT%H:%M:%S%z")
+        dt = datetime(int(year), int(month), int(day))
+        return datestring(dt)
     return "unknown"
 
 

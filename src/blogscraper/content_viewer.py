@@ -60,7 +60,7 @@ def fetch_page_content(url: str) -> str | None:
             with_metadata=True,
             date_extraction_params={
                 "max_date": "2029-12-31",
-                "outputformat": "%Y-%m-%dT%H:%M:%S%z",
+                "outputformat": "%Y-%m-%d %H:%M %z",
             },
         )
         return main_content if main_content else None
