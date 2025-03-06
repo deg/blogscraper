@@ -8,12 +8,13 @@ Usage:
     extract structured data from HTML pages.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Callable, List
 
 from bs4 import BeautifulSoup
 
 from blogscraper.types import URLDict
+from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
 
@@ -51,9 +52,7 @@ def fetch_and_parse_urls(
             creation_date = date_extractor(absolute_url)
             url_dict: URLDict = {
                 "url": absolute_url,
-                "harvest_timestamp": datetime.now(timezone.utc).strftime(
-                    "%Y-%m-%dT%H:%M:%S%z"
-                ),
+                "harvest_timestamp": datestring(datetime.now()),
                 "source": source,
                 "creation_date": creation_date,
             }
