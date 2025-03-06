@@ -58,9 +58,7 @@ def main() -> None:
             if confirm_action(f"Do you want to see the content for {url_dict['url']}?"):
                 show_page_content(url_dict["url"], to_string=False)
 
-    generate_list = confirm_action(
-        "Do you want a list of the URLs (e.g., to pass to Notebook LM)?"
-    )
+    generate_list = confirm_action("Do you want a list of the URLs?")
     if generate_list:
         for url_dict in recent:
             console.print(f"[blue3]{url_dict['url']}[/blue3]")
