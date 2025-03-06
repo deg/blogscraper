@@ -146,9 +146,7 @@ def list_service_account_docs() -> list[GDoc]:
             for file in files
         ]
 
-        docs.sort(
-            key=lambda doc: datetime.fromisoformat(doc["createdTime"].rstrip("Z"))
-        )
+        docs.sort(key=lambda doc: datetime.fromisoformat(doc.createdTime.rstrip("Z")))
         return docs
 
     except Exception as e:

@@ -69,7 +69,7 @@ def select_scrapers(scrapers: list[Scraper]) -> list[str]:
     return list(response)
 
 
-def select_google_docs(docs: list[GDoc], action: str) -> list[str]:
+def select_google_docs(docs: list[GDoc], action: str) -> list[GDoc]:
     """Prompts the user to select Google Docs from a list.
 
     Args:
@@ -77,7 +77,7 @@ def select_google_docs(docs: list[GDoc], action: str) -> list[str]:
         action (str): Reason for this list (for prompt).
 
     Returns:
-        list[str]: A list of selected document IDs.
+        list[Gdoc]: A list of selected documents.
     """
     if not docs:
         print(f"⚠️ No documents available to {action}.")
@@ -86,7 +86,7 @@ def select_google_docs(docs: list[GDoc], action: str) -> list[str]:
     response = questionary.checkbox(
         f"Select Google Docs to {action}:",
         choices=[
-            Choice(f"{doc['createdTime']} - {doc['name']}", value=doc, checked=False)
+            Choice(f"{doc.createdTime} - {doc.name}", value=doc, checked=False)
             for doc in docs
         ],
     ).unsafe_ask()
