@@ -116,6 +116,16 @@ def input_date(message: str, default_date: datetime) -> datetime:
             )
 
 
+def infostr(msg: str) -> str:
+    """Format string to show as info on console"""
+    return f"[bold]{msg}[/bold]"
+
+
+def warnstr(msg: str) -> str:
+    """Format string to show as warning on console"""
+    return f"[red]{msg}[/red]"
+
+
 def errstr(msg: str) -> str:
     """Format string to show as error on console"""
-    return f"[red]{msg}[/red]"
+    return f"[bold][red]{msg}[/red][/bold]"
