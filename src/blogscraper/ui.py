@@ -4,6 +4,8 @@ Provides functions for displaying messages, prompting user input,
 and allowing interactive selections.
 """
 
+from datetime import datetime, timezone
+
 import questionary
 from questionary import Choice
 from rich.console import Console
@@ -84,21 +86,36 @@ def select_urls(urlDicts: list[URLDict]) -> list[str]:
     return list(response)
 
 
-def input_lookback_days() -> int:
-    """Prompts the user to enter the number of days to look back for blog posts.
+def input_date(message: str, default_date: datetime) -> datetime:
+    """Prompts the user for a date using questionary for a friendlier CLI experience.
+
+    Args:
+        message (str): The prompt message to display.
+        default_date (datetime): The default date to prefill in the input.
 
     Returns:
-        int: The number of days entered by the user, defaulting to 7 if no input is
-             given.
-
+        datetime: The selected date.
     """
     while True:
+        date_str = questionary.text(
+            f"{message} (default: {default_date.strftime('%Y-%m-%d')})",
+            default=default_date.strftime("%Y-%m-%d"),
+        ).ask()
+
         try:
-            response = questionary.text(
-                "Enter the number of days to look back (default is 7):"
-            ).ask()
-            if not response.strip():
-                return 7
-            return int(response)
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d").replace(
+                tzinfo=timezone.utc
+            )
+
+            return date_obj
         except ValueError:
-            console.print("[red]Please enter a valid number.[/red]")
+            console.print(
+                errstr(
+                    "Invalid date format. " + "Please enter a valid date (YYYY-MM-DD)."
+                )
+            )
+
+
+def errstr(msg: str) -> str:
+    """Format string to show as error on console"""
+    return f"[red]{msg}[/red]"
