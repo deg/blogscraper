@@ -9,6 +9,7 @@ Usage:
 
 """
 
+import sys
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -212,4 +213,8 @@ def url_to_title_string(url: str) -> str:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nAborted by user. Exiting...")
+        sys.exit(1)

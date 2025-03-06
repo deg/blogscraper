@@ -44,7 +44,9 @@ def confirm_action(message: str, default: bool = True) -> bool:
         bool: True if the user confirms, False otherwise.
 
     """
-    response = questionary.confirm(message, auto_enter=False, default=default).ask()
+    response = questionary.confirm(
+        message, auto_enter=False, default=default
+    ).unsafe_ask()
     return bool(response)
 
 
@@ -63,7 +65,7 @@ def select_scrapers(scrapers: list[Scraper]) -> list[str]:
             Choice(scraper.name, value=str(index), checked=True)
             for index, scraper in enumerate(scrapers)
         ],
-    ).ask()
+    ).unsafe_ask()
     return list(response)
 
 
@@ -87,7 +89,7 @@ def select_google_docs(docs: list[GDoc], action: str) -> list[str]:
             Choice(f"{doc['createdTime']} - {doc['name']}", value=doc, checked=False)
             for doc in docs
         ],
-    ).ask()
+    ).unsafe_ask()
 
     return response if response else []
 
@@ -107,7 +109,7 @@ def select_urls(urlDicts: list[URLDict]) -> list[str]:
             Choice(urlDict["url"], value=urlDict["url"], checked=True)
             for urlDict in urlDicts
         ],
-    ).ask()
+    ).unsafe_ask()
     return list(response)
 
 
@@ -125,7 +127,7 @@ def input_date(message: str, default_date: datetime) -> datetime:
         date_str = questionary.text(
             f"{message} (default: {default_date.strftime('%Y-%m-%d')})",
             default=default_date.strftime("%Y-%m-%d"),
-        ).ask()
+        ).unsafe_ask()
 
         try:
             date_obj = datetime.strptime(date_str, "%Y-%m-%d").replace(
