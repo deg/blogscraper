@@ -1,3 +1,14 @@
+"""Main entry point for the Blogscraper CLI.
+
+Handles user interaction, scraper execution, and data processing.
+Allows users to fetch recent blog posts, view their contents, and generate reports.
+
+Usage:
+    Run this module to start the Blogscraper CLI. Typically, start with `make run` The
+    script guides users through interactive choices for scraping and processing data.
+
+"""
+
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
@@ -28,6 +39,7 @@ SCRAPERS = [
 
 
 def main() -> None:
+    """Starts the Blogscraper CLI and handles user interactions."""
     display_welcome()
 
     scrape = confirm_action("Do you want to scrape new URLs?")
@@ -63,10 +75,8 @@ def main() -> None:
         for url_dict in recent:
             console.print(f"[blue3]{url_dict['url']}[/blue3]")
 
-    generate_url_list = confirm_action(
-        "Do you want to generate a consolidated document?"
-    )
-    if generate_url_list:
+    generate_doc = confirm_action("Do you want to generate a consolidated document?")
+    if generate_doc:
         selected_urls = select_urls(recent)
         text = (
             "<!-- This document is a set of very recent"
@@ -94,8 +104,7 @@ def main() -> None:
 
 
 def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
-    """
-    Prints URLs that were collected within the last 'lookback_days' days.
+    """Prints URLs that were collected within the last 'lookback_days' days.
 
     Args:
         existing_urls (list[URLDict]): List of existing URLs.
@@ -114,11 +123,16 @@ def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
 
 
 def generate_title_list(urls: list[URLDict]) -> str:
-    """
-    Return a numbered list of titles and URLs, e.g.,
+    """Returns a numbered list of titles and URLs, e.g.,
     1. "Economics Roundup 5" -
        https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
     2. ...
+
+    Args:
+        urls (list[URLDict]): A list of URLDict objects containing URLs and metadata.
+
+    Returns:
+        str: A formatted string listing numbered titles and URLs.
     """
     lines = []
     for i, url_dict in enumerate(urls, start=1):
@@ -134,6 +148,12 @@ def url_to_title_string(url: str) -> str:
     into a string like
         "Economics Roundup 5" -
          https://thezvi.wordpress.com/2025/02/25/economics-roundup-5/
+
+    Args:
+        url (str): The URL to extract a title from.
+
+    Returns:
+        str: A formatted title extracted from the URL.
     """
     parsed = urlparse(url)
     path_segments = [seg for seg in parsed.path.split("/") if seg]

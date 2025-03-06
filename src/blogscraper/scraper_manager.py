@@ -1,3 +1,9 @@
+"""Manages execution of blog-specific scrapers.
+
+This module coordinates the execution of various blog scrapers, deduplicates
+newly fetched URLs, and updates stored data.
+"""
+
 from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.storage import (
     deduplicate_urls,
@@ -9,8 +15,11 @@ from blogscraper.utils.storage import (
 def run_scrapers(
     selected_sites: list[str], scrapers: list[Scraper]
 ) -> dict[str, list[URLDict]]:
-    """
-    Scrape blog entries from selected sites.
+    """Scrapes blog entries from selected sites and updates stored URLs.
+
+    Args:
+        selected_sites (list[str]): List of selected scraper names.
+        scrapers (list[Scraper]): List of scraper objects.
 
     Returns:
         dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
@@ -24,6 +33,7 @@ def run_scrapers(
 
     unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
     save_stored_urls(existing_urls + unique_new_urls)
+
     return {
         "all_new_urls": all_new_urls,
         "unique_new_urls": unique_new_urls,

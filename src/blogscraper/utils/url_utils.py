@@ -1,3 +1,13 @@
+"""Utility functions for handling and fetching URLs.
+
+Provides functions to normalize URLs, fetch HTML content, and handle HTTP errors
+in a structured way.
+
+Usage:
+    These functions assist scrapers by ensuring reliable URL resolution and
+    content retrieval.
+"""
+
 from typing import Final
 from urllib.parse import urljoin
 
@@ -7,23 +17,26 @@ from blogscraper.ui import console
 
 
 def normalize_url(base_url: str, link: str) -> str:
-    """
-    Converts a relative URL to an absolute URL using the base URL.
+    """Converts a relative URL to an absolute URL using the given base URL.
 
     Args:
         base_url (str): The base URL of the website.
         link (str): The URL to be normalized.
 
     Returns:
-        str: The normalized absolute URL.
+        str: The absolute URL.
     """
     return urljoin(base_url, link)
 
 
 def get_html(url: str) -> str | None:
-    """
-    Wraps fetch_html and returns its result or None on error.
-    Prints a brief error messageif the request fails.
+    """Fetches HTML content from the given URL, handling request errors gracefully.
+
+    Args:
+        url (str): The URL to fetch.
+
+    Returns:
+        str | None: The HTML content if the request succeeds, otherwise None.
     """
     try:
         return fetch_html(url)
@@ -39,8 +52,7 @@ def get_html(url: str) -> str | None:
 
 
 def fetch_html(url: str) -> str:
-    """
-    Fetch the raw HTML content from the specified URL with a custom user agent.
+    """Fetches the raw HTML content from the specified URL with a custom user agent.
 
     Args:
         url (str): The URL to fetch.
@@ -49,7 +61,7 @@ def fetch_html(url: str) -> str:
         str: The raw HTML content of the page.
 
     Raises:
-        requests.HTTPError: If an HTTP error occurs (e.g. 404, 500).
+        requests.HTTPError: If an HTTP error occurs (e.g., 404, 500).
     """
     USER_AGENT: Final[str] = (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
