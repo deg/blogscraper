@@ -9,7 +9,7 @@ Usage:
 
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 from blogscraper.content_viewer import show_page_content
@@ -23,7 +23,7 @@ from blogscraper.ui import (
     confirm_action,
     console,
     display_welcome,
-    input_lookback_days,
+    input_date,
     select_scrapers,
     select_urls,
 )
@@ -55,8 +55,11 @@ def main() -> None:
     else:
         all_urls = load_stored_urls()
 
-    lookback_days = input_lookback_days()
-    recent = recent_urls(all_urls, lookback_days)
+    today = datetime.today()
+    last_week = today - timedelta(days=7)
+    start_day = input_date("First day to collect", last_week)
+    end_day = input_date("Last day to collect", today)
+    recent = recent_urls(all_urls, start_day, end_day)
 
     if not recent:
         console.print("[red]No posts in the selected time period.[/red]")
@@ -103,18 +106,26 @@ def main() -> None:
         )
 
 
-def recent_urls(urls: list[URLDict], lookback_days: int) -> list[URLDict]:
-    """Prints URLs that were collected within the last 'lookback_days' days.
+def recent_urls(
+    urls: list[URLDict], first_date: datetime, last_date: datetime
+) -> list[URLDict]:
+    """Filters URLs collected within the specified date range (inclusive).
 
     Args:
-        existing_urls (list[URLDict]): List of existing URLs.
-        lookback_days (int): Number of days to look back.
+        urls (list[URLDict]): List of existing URL dicts.
+        first_date (datetime): The start of the date range (inclusive).
+        last_date (datetime): The end of the date range (inclusive).
+
+    Returns:
+        list[URLDict]: A list of URLs within the date range.
     """
-    cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    first_date = first_date.replace(hour=0, minute=0, second=0)
+    last_date = last_date.replace(hour=23, minute=59, second=59)
+
     recent = [
         url_dict
         for url_dict in urls
-        if datetime.fromisoformat(url_dict["creation_date"]) > cutoff_date
+        if first_date <= datetime.fromisoformat(url_dict["creation_date"]) <= last_date
     ]
 
     # Sort the URLs by creation_date, earliest first
