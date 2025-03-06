@@ -35,6 +35,8 @@ Thumbs.db
 # DeepFace Cached Models
 # ~/.deepface/
 
+# Project-specific files
 .env.secret
-secrets/
 data/urls.json
+dev-docs/blogscraper-digest.txt
+secrets/
