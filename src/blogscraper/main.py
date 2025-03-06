@@ -29,6 +29,7 @@ from blogscraper.ui import (
 )
 from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
 from blogscraper.utils.storage import clear_stored_urls, load_stored_urls
+from blogscraper.utils.time_utils import datestring
 
 SCRAPERS = [
     Scraper(name="The Zvi", function=scrape_thezvi),
@@ -93,7 +94,9 @@ def main() -> None:
         for url in selected_urls:
             text += show_page_content(url, to_string=True)
 
-        doc_id, doc_url = create_google_doc(f"BlogScraper document of {datetime.now()}")
+        human_start = datestring(start_day, human=True)
+        human_end = datestring(end_day, human=True)
+        doc_id, doc_url = create_google_doc(f"{human_start} - {human_end} blog scrape")
         write_to_google_doc(doc_id, text)
         console.print(f"[red]Created Google doc: {doc_url}[/red]")
 

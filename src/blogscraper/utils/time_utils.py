@@ -3,13 +3,21 @@
 from datetime import datetime, timezone
 
 
-def datestring(dt: datetime) -> str:
-    """Converts a datetime object to an ISO 8601 formatted string with UTC timezone.
+def datestring(dt: datetime, human: bool = False) -> str:
+    """Converts a datetime object to a formatted string.
 
     Args:
         dt (datetime): The datetime object to convert.
 
+        human (bool, optional): If True, returns a USA human-friendly
+        format (e.g., "Feb 25, 2025").
+
     Returns:
-        str: The ISO-formatted datetime string with second-level precision.
+        str: The formatted datetime string.
+
     """
-    return dt.replace(tzinfo=timezone.utc).isoformat(timespec="seconds")
+    dt = dt.replace(tzinfo=timezone.utc)
+
+    if human:
+        return dt.strftime("%b %d, %Y")
+    return dt.isoformat(timespec="seconds")
