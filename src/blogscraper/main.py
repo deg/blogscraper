@@ -91,8 +91,25 @@ def main() -> None:
             text += f"{url}\n"
         text += "\n\n"
 
-        for url in selected_urls:
-            text += show_page_content(url, to_string=True)
+        for i, url in enumerate(selected_urls, start=1):
+            contents = show_page_content(url, to_string=True)
+            text += contents
+            console.print(
+                infostr(
+                    f"Adding {i}/{len(selected_urls)} "
+                    + f"(len={len(contents)}): {url}"
+                )
+            )
+            if (len_so_far := len(text)) > 1000000:
+                console.print(
+                    warnstr(
+                        f"This document is getting long ({len_so_far}. "
+                        + "It may be too big for Google Docs).\n"
+                        + "Not appendng more documents.\n"
+                        + "Table of contents will be inconsistent."
+                    )
+                )
+                break
 
         human_start = datestring(start_day, human=True)
         human_end = datestring(end_day, human=True)
