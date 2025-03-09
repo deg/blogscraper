@@ -4,12 +4,34 @@ This module coordinates the execution of various blog scrapers, deduplicates
 newly fetched URLs, and updates stored data.
 """
 
+from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
+from blogscraper.scrapers.simonwillison import scrape_simonwillison
+from blogscraper.scrapers.thezvi import scrape_thezvi
 from blogscraper.types import Scraper, URLDict
+from blogscraper.ui import select_scrapers
 from blogscraper.utils.storage import (
+    clear_stored_urls,
     deduplicate_urls,
     load_stored_urls,
     save_stored_urls,
 )
+
+SCRAPERS = [
+    Scraper(name="The Zvi", function=scrape_thezvi),
+    Scraper(name="Simon Willison", function=scrape_simonwillison),
+    Scraper(name="Nathan Benaich", function=scrape_nathanbenaich),
+    Scraper(name="Cliffnotes", function=scrape_cliffnotes),
+]
+
+
+def scrape_blogs(erase_old: bool) -> list[URLDict]:
+    """Handles the website scraping process and returns the scraped URLs."""
+    if erase_old:
+        clear_stored_urls()
+
+    selected_sites = select_scrapers(SCRAPERS)
+    results = run_scrapers(selected_sites, SCRAPERS)
+    return results["all_urls"]
 
 
 def run_scrapers(
