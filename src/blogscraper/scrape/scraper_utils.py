@@ -10,18 +10,18 @@ Usage:
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Callable, List
+from typing import Callable
 
 from bs4 import BeautifulSoup, Tag
 
-from blogscraper.types import URLDict
+from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
 
 def fetch_and_parse_urls(
     base_url: str, selector: str, source: str, date_extractor: Callable[[str], str]
-) -> List[URLDict]:
+) -> list[URLDict]:
     """Finds and extracts URLs from a given webpage using a CSS selector.
 
     Args:
@@ -32,12 +32,11 @@ def fetch_and_parse_urls(
                 its URL.
 
     Returns:
-        List[URLDict]: A list of extracted URLDict objects containing
+        list[URLDict]: A list of extracted URLDict objects containing
         URLs, timestamps, and source information.
-
     """
     print(f"Fetching and parsing URLs from {base_url}")
-    urls: List[URLDict] = []
+    urls: list[URLDict] = []
 
     html = get_html(base_url)
     if html is None:
@@ -116,6 +115,59 @@ def extract_urls_from_archive(
         urls.append(url_dict)
 
     return urls
+
+
+def fetch_all_urls(
+    scraper: Scraper,
+    selector: str,
+    archive_selector: str,
+    date_extractor: Callable[[str], str],
+) -> list[URLDict]:
+    """
+    Fetches URLs from both the main page and archive pages.
+
+    Args:
+        scraper (Scraper): The scraper object with base_url.
+        selector (str): CSS selector for extracting links from pages.
+        archive_selector (str): CSS selector for finding archive links.
+        date_extractor (Callable[[str], str]): Function to extract date from URL.
+
+    Returns:
+        list[URLDict]: List of extracted URLs from main and archive pages.
+    """
+    base_url = scraper.base_url
+
+    # Collect all pages (main + archives)
+    pages_to_fetch = [base_url] + extract_archive_links(base_url, archive_selector)
+
+    # Fetch all pages in parallel
+    return fetch_multiple_pages(
+        pages_to_fetch,
+        lambda url: fetch_and_parse_urls(url, selector, scraper.name, date_extractor),
+    )
+
+
+def extract_archive_links(base_url: str, archive_selector: str) -> list[str]:
+    """
+    Extracts archive page URLs from a site's main page.
+
+    Args:
+        base_url (str): The base URL of the site.
+        archive_selector (str): CSS selector for finding archive links.
+
+    Returns:
+        list[str]: A list of archive URLs.
+    """
+    html = get_html(base_url)
+    if html is None:
+        return []
+
+    soup = BeautifulSoup(html, "html.parser")
+    return [
+        normalize_url(base_url, link.get("href"))
+        for link in soup.select(archive_selector)
+        if isinstance(link.get("href"), str)
+    ]
 
 
 def fetch_multiple_pages(
