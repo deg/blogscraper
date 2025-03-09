@@ -4,9 +4,10 @@ from datetime import datetime
 from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.time_utils import datestring
 
-from ..scraper_utils import fetch_and_parse_urls
+from ..scraper_utils import fetch_all_urls
 
 
+# Refactored scrape_simonwillison to use fetch_all_urls
 def scrape_simonwillison(scraper: Scraper) -> list[URLDict]:
     """
     Scrapes Simon Willison's blog for URLs.
@@ -14,10 +15,10 @@ def scrape_simonwillison(scraper: Scraper) -> list[URLDict]:
     Returns:
         list[URLDict]: A list of URLDict objects.
     """
-    return fetch_and_parse_urls(
-        base_url=scraper.base_url,
+    return fetch_all_urls(
+        scraper,
         selector="div#secondary ul li a",
-        source="simonwillison",
+        archive_selector="div.archive-links a",
         date_extractor=extract_simonwillison_date,
     )
 
