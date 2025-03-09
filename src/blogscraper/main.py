@@ -19,7 +19,7 @@ from blogscraper.scraper_manager import run_scrapers
 from blogscraper.scrapers.nathanbenaich import scrape_cliffnotes, scrape_nathanbenaich
 from blogscraper.scrapers.simonwillison import scrape_simonwillison
 from blogscraper.scrapers.thezvi import scrape_thezvi
-from blogscraper.types import Scraper, URLDict
+from blogscraper.types import GDoc, Scraper, URLDict
 from blogscraper.ui import (
     confirm_action,
     console,
@@ -52,91 +52,127 @@ def main() -> None:
     """Starts the Blogscraper CLI and handles user interactions."""
     display_welcome()
 
-    scrape = confirm_action("Scrape websites for new URLs?")
-    if scrape:
-        delete_old = confirm_action("Erase old DB and start fresh?", default=False)
-        if delete_old:
-            clear_stored_urls()
-        # [TODO] Fix select_scrapers to be like select_urls,
-        #        rather than using enumerate
-        selected_sites = select_scrapers(SCRAPERS)
-        results = run_scrapers(selected_sites, SCRAPERS)
-        all_urls = results["all_urls"]
+    all_urls = []
+    if confirm_action("Scrape websites for new URLs?"):
+        erase_old = confirm_action("Erase old DB and start fresh?", default=False)
+        all_urls = handle_scraping(erase_old)
     else:
         all_urls = load_stored_urls()
 
-    today = datetime.today()
-    last_week = today - timedelta(days=7)
-    start_day = input_date("First day to analyze", last_week)
-    end_day = input_date("Last day to analyze", today)
-    ranged_urls = get_range_of_urls(all_urls, start_day, end_day)
-
+    ranged_urls, start_day, end_day = filter_urls_by_date_range(all_urls)
     if not ranged_urls:
         console.print(warnstr("No posts in the selected time period."))
         return
 
-    view_contents = confirm_action("Display contents of selected blogs?")
-    if view_contents:
-        for url_dict in ranged_urls:
-            if confirm_action(f"See content of {url_dict['url']}?"):
-                show_page_content(url_dict["url"], to_string=False)
+    if confirm_action("Display contents of selected blogs?"):
+        handle_content_display(ranged_urls)
 
-    generate_list = confirm_action("Display a list of the URLs?")
-    if generate_list:
-        for url_dict in ranged_urls:
-            console.print(f"[blue3]{url_dict['url']}[/blue3]")
+    if confirm_action("Display a list of the URLs?"):
+        handle_url_list(ranged_urls)
 
-    generate_doc = confirm_action("Generate a consolidated Google Doc?")
-    if generate_doc:
-        selected_urls = select_urls(ranged_urls)
-        text = (
-            "<!-- This document is a set of blog posts "
-            + "focused on AI innovations -->\n\n"
-            + "<!-- TABLE OF CONTENTS -->\n\n"
-        )
-        for url in selected_urls:
-            text += f"{url}\n"
-        text += "\n\n"
+    if confirm_action("Generate a consolidated Google Doc?"):
+        handle_google_doc_generation(ranged_urls, start_day, end_day)
 
-        for i, url in enumerate(selected_urls, start=1):
-            contents = show_page_content(url, to_string=True)
-            text += contents
-            console.print(
-                infostr(
-                    f"Adding {i}/{len(selected_urls)} "
-                    + f"(len={len(contents)}): {url}"
-                )
-            )
-            if (len_so_far := len(text)) > 1000000:
-                console.print(
-                    warnstr(
-                        f"This document is getting long ({len_so_far}. "
-                        + "It may be too big for Google Docs).\n"
-                        + "Not appendng more documents.\n"
-                        + "Table of contents will be inconsistent."
-                    )
-                )
-                break
-
-        human_start = datestring(start_day, human=True)
-        human_end = datestring(end_day, human=True)
-        doc_id, doc_url = create_google_doc(f"{human_start} - {human_end} blog scrape")
-        write_to_google_doc(doc_id, text)
-        console.print(infostr(f"Created Google doc: {doc_url}"))
-
-    generate_prompt = confirm_action("Generate an ad-hoc LLM prompt?")
-    if generate_prompt:
-        console.print(
-            f"[grey19]{PROMPT_PREFIX}\n\n"
-            + f"{generate_title_list(ranged_urls)}\n\n"
-            + f"{PROMPT_SUFFIX}[/grey19]"
-        )
+    if confirm_action("Generate an ad-hoc LLM prompt?"):
+        handle_llm_prompt_generation(ranged_urls)
 
     all_old_google_docs = list_service_account_docs()
     if all_old_google_docs and confirm_action("Delete some old Google Docs?"):
-        doc_ids_to_delete = select_google_docs(all_old_google_docs, "delete")
-        for doc in doc_ids_to_delete:
-            delete_service_account_doc(doc.id, doc.name)
+        handle_google_doc_cleanup(all_old_google_docs)
+
+
+def handle_scraping(erase_old: bool) -> list[URLDict]:
+    """Handles the website scraping process and returns the scraped URLs."""
+    if erase_old:
+        clear_stored_urls()
+
+    selected_sites = select_scrapers(SCRAPERS)
+    results = run_scrapers(selected_sites, SCRAPERS)
+    return results["all_urls"]
+
+
+def filter_urls_by_date_range(
+    all_urls: list[URLDict],
+) -> tuple[list[URLDict], datetime, datetime]:
+    """Filters scraped URLs based on user-defined date range."""
+    today = datetime.today()
+    last_week = today - timedelta(days=7)
+
+    start_day = input_date("First day to analyze", last_week)
+    end_day = input_date("Last day to analyze", today)
+
+    return get_range_of_urls(all_urls, start_day, end_day), start_day, end_day
+
+
+def handle_content_display(ranged_urls: list[URLDict]) -> None:
+    """Displays blog contents for selected URLs."""
+    for url_dict in ranged_urls:
+        if confirm_action(f"See content of {url_dict['url']}?"):
+            show_page_content(url_dict["url"], to_string=False)
+
+
+def handle_url_list(ranged_urls: list[URLDict]) -> None:
+    """Displays a list of URLs."""
+    for url_dict in ranged_urls:
+        console.print(f"[blue3]{url_dict['url']}[/blue3]")
+
+
+def handle_google_doc_generation(
+    ranged_urls: list[URLDict], start_day: datetime, end_day: datetime
+) -> None:
+    """Generates a Google Document with selected blog content."""
+    selected_urls = select_urls(ranged_urls)
+    document_content = prepare_google_doc_content(selected_urls)
+
+    human_start = datestring(start_day, human=True)
+    human_end = datestring(end_day, human=True)
+
+    doc_id, doc_url = create_google_doc(f"{human_start} - {human_end} blog scrape")
+    write_to_google_doc(doc_id, document_content)
+    console.print(infostr(f"Created Google doc: {doc_url}"))
+
+
+def prepare_google_doc_content(selected_urls: list[str]) -> str:
+    """Prepares the content for the Google Document."""
+    text = "<!-- This document is a set of blog posts focused on AI innovations -->\n\n"
+    text += "<!-- TABLE OF CONTENTS -->\n\n"
+    text += "\n".join(selected_urls) + "\n\n"
+
+    for i, url in enumerate(selected_urls, start=1):
+        contents = show_page_content(url, to_string=True)
+        text += contents
+        console.print(
+            infostr(f"Adding {i}/{len(selected_urls)} (len={len(contents)}): {url}")
+        )
+
+        if (len_so_far := len(text)) > 1_000_000:
+            console.print(
+                warnstr(
+                    f"This document is getting long ({len_so_far}. "
+                    + "It may be too big for Google Docs).\n"
+                    + "Not appendng more documents.\n"
+                    + "Table of contents will be inconsistent."
+                )
+            )
+            break
+
+    return text
+
+
+def handle_llm_prompt_generation(ranged_urls: list[URLDict]) -> None:
+    """Generates an LLM prompt based on the scraped data."""
+    console.print(
+        f"[grey19]{PROMPT_PREFIX}\n\n"
+        + f"{generate_title_list(ranged_urls)}\n\n"
+        + f"{PROMPT_SUFFIX}[/grey19]"
+    )
+
+
+def handle_google_doc_cleanup(old_docs: list[GDoc]) -> None:
+    """Deletes selected old Google Docs."""
+    doc_ids_to_delete = select_google_docs(old_docs, "delete")
+    for doc in doc_ids_to_delete:
+        delete_service_account_doc(doc.id, doc.name)
 
 
 def get_range_of_urls(
