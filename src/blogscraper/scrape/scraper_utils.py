@@ -8,6 +8,7 @@ Usage:
     extract structured data from HTML pages.
 """
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Callable, List
 
@@ -115,3 +116,35 @@ def extract_urls_from_archive(
         urls.append(url_dict)
 
     return urls
+
+
+def fetch_multiple_pages(
+    urls: list[str],
+    scraper_function: Callable[[str], list[URLDict]],
+    max_workers: int = 5,
+) -> list[URLDict]:
+    """
+    Fetch multiple pages in parallel using ThreadPoolExecutor.
+
+    Args:
+        urls (list[str]): List of page URLs to scrape.
+        scraper_function (Callable[[str], list[URLDict]]):
+            Function that takes a URL and returns a list of extracted URLs.
+        max_workers (int): Number of parallel workers (default: 5).
+
+    Returns:
+        list[URLDict]: Aggregated list of extracted URLs from all pages.
+    """
+    results = []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_url = {executor.submit(scraper_function, url): url for url in urls}
+
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                results.extend(future.result())
+            except Exception as e:
+                print(f"Error fetching {url}: {e}")
+
+    return results

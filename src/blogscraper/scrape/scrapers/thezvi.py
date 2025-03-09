@@ -1,5 +1,4 @@
 import re
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 from bs4 import BeautifulSoup
@@ -8,7 +7,7 @@ from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
-from ..scraper_utils import fetch_and_parse_urls
+from ..scraper_utils import fetch_and_parse_urls, fetch_multiple_pages
 
 # Define a constant for the number of threads
 MAX_WORKERS = 5
@@ -40,36 +39,26 @@ def scrape_thezvi(scraper: Scraper) -> list[URLDict]:
 
     soup = BeautifulSoup(html, "html.parser")
     search_section = soup.select_one("li#archives-2")
-    additional_urls: list[URLDict] = []
+    if not search_section:
+        return main_page_urls
 
-    if search_section:
-        links = search_section.select("a")
-        archive_urls = [
-            normalize_url(base_url, href)
-            for link in links
-            for href in [link.get("href")]
-            if isinstance(href, str)
-        ]
+    archive_urls = [
+        normalize_url(base_url, href)
+        for link in search_section.select("a")
+        if isinstance(href := link.get("href"), str)
+    ]
 
-        # Use ThreadPoolExecutor to fetch archive pages in parallel
-        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            future_to_url = {
-                executor.submit(
-                    fetch_and_parse_urls,
-                    base_url=url,
-                    selector=selector,
-                    source=source,
-                    date_extractor=extract_thezvi_date,
-                ): url
-                for url in archive_urls
-            }
-            for future in as_completed(future_to_url):
-                try:
-                    additional_urls.extend(future.result())
-                except Exception as e:
-                    print(f"Error fetching {future_to_url[future]}: {e}")
+    # Use new fetch_multiple_pages function
+    additional_urls = fetch_multiple_pages(
+        archive_urls,
+        lambda url: fetch_and_parse_urls(
+            base_url=url,
+            selector=selector,
+            source=source,
+            date_extractor=extract_thezvi_date,
+        ),
+    )
 
-    # Combine main page URLs with additional URLs
     return main_page_urls + additional_urls
 
 
