@@ -17,10 +17,24 @@ from blogscraper.utils.storage import (
 )
 
 SCRAPERS = [
-    Scraper(name="The Zvi", function=scrape_thezvi),
-    Scraper(name="Simon Willison", function=scrape_simonwillison),
-    Scraper(name="Nathan Benaich", function=scrape_nathanbenaich),
-    Scraper(name="Cliffnotes", function=scrape_cliffnotes),
+    Scraper(
+        name="The Zvi", base_url="https://thezvi.wordpress.com/", function=scrape_thezvi
+    ),
+    Scraper(
+        name="Simon Willison",
+        base_url="https://simonwillison.net/",
+        function=scrape_simonwillison,
+    ),
+    Scraper(
+        name="Nathan Benaich",
+        base_url="https://nathanbenaich.substack.com/archive?sort=new",
+        function=scrape_nathanbenaich,
+    ),
+    Scraper(
+        name="Cliffnotes",
+        base_url="https://newsletter.cliffnotes.ai/",
+        function=scrape_cliffnotes,
+    ),
 ]
 
 
@@ -30,6 +44,7 @@ def scrape_blogs(erase_old: bool) -> list[URLDict]:
         clear_stored_urls()
 
     selected_sites = select_scrapers(SCRAPERS)
+
     results = run_scrapers(selected_sites, SCRAPERS)
     return results["all_urls"]
 
@@ -51,7 +66,7 @@ def run_scrapers(
     all_new_urls = []
     for index, scraper in enumerate(scrapers):
         if str(index) in selected_sites:
-            all_new_urls.extend(scraper.function())
+            all_new_urls.extend(scraper.function(scraper))
 
     unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
     save_stored_urls(existing_urls + unique_new_urls)
