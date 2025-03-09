@@ -2,8 +2,9 @@ import re
 from datetime import datetime
 
 from blogscraper.types import Scraper, URLDict
-from blogscraper.utils.scraper_utils import fetch_and_parse_urls
 from blogscraper.utils.time_utils import datestring
+
+from ..scraper_utils import fetch_and_parse_urls
 
 
 def scrape_simonwillison(scraper: Scraper) -> list[URLDict]:

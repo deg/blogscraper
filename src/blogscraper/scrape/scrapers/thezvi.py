@@ -5,9 +5,10 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 from blogscraper.types import Scraper, URLDict
-from blogscraper.utils.scraper_utils import fetch_and_parse_urls
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
+
+from ..scraper_utils import fetch_and_parse_urls
 
 # Define a constant for the number of threads
 MAX_WORKERS = 5
