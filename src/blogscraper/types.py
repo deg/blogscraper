@@ -44,9 +44,11 @@ class Scraper:
 
     Attributes:
         name (str): The name of the scraper.
-        function (Callable[[], list[URLDict]]): A function that scrapes URLs and
-        returns structured metadata.
+        base_url (str): The base URL of the blog.
+        function (Callable[[Scraper], list[URLDict]]): A function that scrapes URLs
+            using the scraper instance.
     """
 
     name: str
-    function: Callable[[], list[URLDict]]
+    base_url: str
+    function: Callable[["Scraper"], list[URLDict]]

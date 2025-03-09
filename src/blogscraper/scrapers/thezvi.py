@@ -4,7 +4,7 @@ from datetime import datetime
 
 from bs4 import BeautifulSoup
 
-from blogscraper.types import URLDict
+from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.scraper_utils import fetch_and_parse_urls
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
@@ -13,23 +13,14 @@ from blogscraper.utils.url_utils import get_html, normalize_url
 MAX_WORKERS = 5
 
 
-def extract_thezvi_date(url: str) -> str:
-    match = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", url)
-    if match:
-        year, month, day = match.groups()
-        dt = datetime(int(year), int(month), int(day))
-        return datestring(dt)
-    return "unknown"
-
-
-def scrape_thezvi() -> list[URLDict]:
+def scrape_thezvi(scraper: Scraper) -> list[URLDict]:
     """
     Scrapes thezvi blog for URLs, including archived old posts.
 
     Returns:
         list[URLDict]: A list of URLDict objects.
     """
-    base_url = "https://thezvi.wordpress.com/"
+    base_url = scraper.base_url
     selector = "h2.entry-title a"
     source = "thezvi"
 
@@ -79,3 +70,12 @@ def scrape_thezvi() -> list[URLDict]:
 
     # Combine main page URLs with additional URLs
     return main_page_urls + additional_urls
+
+
+def extract_thezvi_date(url: str) -> str:
+    match = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", url)
+    if match:
+        year, month, day = match.groups()
+        dt = datetime(int(year), int(month), int(day))
+        return datestring(dt)
+    return "unknown"

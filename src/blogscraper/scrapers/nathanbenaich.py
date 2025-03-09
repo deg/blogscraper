@@ -2,25 +2,25 @@ from datetime import datetime
 
 from bs4 import BeautifulSoup, Tag
 
-from blogscraper.types import URLDict
+from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
 
-def scrape_nathanbenaich() -> list[URLDict]:
+def scrape_nathanbenaich(scraper: Scraper) -> list[URLDict]:
     """
     Scrapes Nathan Benaich's blog for URLs.
 
     Returns:
         list[URLDict]: A list of URLDict objects.
     """
-    base_url = "https://nathanbenaich.substack.com/archive?sort=new"
+    base_url = scraper.base_url
     print(f"Fetching and parsing URLs from {base_url}")
     return scrape_blog(base_url, "div.portable-archive-list div", False)
 
 
-def scrape_cliffnotes() -> list[URLDict]:
-    base_url = "https://newsletter.cliffnotes.ai/"
+def scrape_cliffnotes(scraper: Scraper) -> list[URLDict]:
+    base_url = scraper.base_url
     print(f"Fetching and parsing URLs from {base_url}")
     return scrape_blog(base_url, "a", True)
 
