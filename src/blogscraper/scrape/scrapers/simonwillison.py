@@ -16,10 +16,11 @@ def scrape_simonwillison(scraper: Scraper) -> list[URLDict]:
         list[URLDict]: A list of URLDict objects.
     """
     return fetch_all_urls(
-        scraper,
+        base_url=scraper.base_url,
+        source_name=scraper.name,
         selector="div#secondary ul li a",
         archive_selector="div.archive-links a",
-        date_extractor=extract_simonwillison_date,
+        url_date_parser=extract_simonwillison_date,
     )
 
 

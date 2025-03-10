@@ -18,10 +18,11 @@ def scrape_thezvi(scraper: Scraper) -> list[URLDict]:
         list[URLDict]: A list of URLDict objects.
     """
     return fetch_all_urls(
-        scraper,
+        base_url=scraper.base_url,
+        source_name=scraper.name,
         selector="h2.entry-title a",
         archive_selector="li#archives-2 a",
-        date_extractor=extract_thezvi_date,
+        url_date_parser=extract_thezvi_date,
     )
 
 
