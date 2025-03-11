@@ -37,8 +37,9 @@ def load_stored_urls() -> list[URLDict]:
     """Loads stored URLs from the JSON file.
 
     Returns:
-        list[URLDict]: A list of stored URLs. Returns an empty list if the file
-        does not exist or is corrupted.
+        list[URLDict]: A list of stored URLs as URLDicts. Returns an empty list if the
+        file does not exist or is corrupted.
+
     """
     file_path = get_file_path()
 
@@ -49,7 +50,7 @@ def load_stored_urls() -> list[URLDict]:
         try:
             data = json.load(file)
             if isinstance(data, list):
-                return data
+                return [URLDict(**entry) for entry in data]
         except json.JSONDecodeError:
             pass
 
@@ -64,7 +65,7 @@ def save_stored_urls(urls_list: list[URLDict]) -> None:
     """
     file_path = get_file_path()
     with open(file_path, "w") as file:
-        json.dump(urls_list, file, indent=4)
+        json.dump([url_dict.__dict__ for url_dict in urls_list], file, indent=4)
 
 
 def deduplicate_urls(
@@ -81,12 +82,12 @@ def deduplicate_urls(
         existing storage.
 
     """
-    existing_urls_set = {url_dict["url"] for url_dict in existing_urls}
+    existing_urls_set = {url_dict.url for url_dict in existing_urls}
     seen_urls = set()
     unique_new_urls = []
 
     for url_dict in new_urls:
-        url = url_dict["url"]
+        url = url_dict.url
         if url not in seen_urls and url not in existing_urls_set:
             seen_urls.add(url)
             print(f"Adding {url}")

@@ -106,8 +106,7 @@ def select_urls(urlDicts: list[URLDict]) -> list[str]:
     response = questionary.checkbox(
         "Select blog URLs to save:",
         choices=[
-            Choice(urlDict["url"], value=urlDict["url"], checked=True)
-            for urlDict in urlDicts
+            Choice(urlDict.url, value=urlDict.url, checked=True) for urlDict in urlDicts
         ],
     ).unsafe_ask()
     return list(response)

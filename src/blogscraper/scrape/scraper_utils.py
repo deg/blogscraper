@@ -46,7 +46,7 @@ def extend_posts_with_references(
     ref_dicts: list[URLDict] = []
     for page in blogpost_dicts:
         references = references_from(
-            url=page["url"],
+            url=page.url,
             wrapping_selector=wrapping_selector,
             local=False,
             remote=True,
@@ -54,12 +54,12 @@ def extend_posts_with_references(
         )
         references = list(set(references))  # Remove duplicates
         for ref in references:
-            ref_dict: URLDict = {
-                "url": ref,
-                "harvest_timestamp": datestring(datetime.now()),
-                "source": page["url"],
-                "creation_date": page["creation_date"],
-            }
+            ref_dict = URLDict(
+                url=ref,
+                harvest_timestamp=datestring(datetime.now()),
+                source=page.url,
+                creation_date=page.creation_date,
+            )
             ref_dicts.append(ref_dict)
 
     return blogpost_dicts + ref_dicts
@@ -245,12 +245,12 @@ def fetch_and_parse_urls(
         creation_date_str = datestring(creation_date)
         if not creation_date_str:
             continue
-        url_dict: URLDict = {
-            "url": absolute_url,
-            "harvest_timestamp": datestring(datetime.now()),
-            "source": source,
-            "creation_date": creation_date_str,
-        }
+        url_dict = URLDict(
+            url=absolute_url,
+            harvest_timestamp=datestring(datetime.now()),
+            source=source,
+            creation_date=creation_date_str,
+        )
         urls.append(url_dict)
 
     return urls

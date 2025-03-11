@@ -7,11 +7,11 @@ Usage:
 """
 
 from dataclasses import dataclass
-from typing import Callable, TypedDict
+from typing import Callable
 
 
-# [TODO] Convert this to a dataclass too
-class URLDict(TypedDict):
+@dataclass
+class URLDict:
     """Represents structured metadata for a scraped blog URL.
 
     Attributes:

@@ -30,7 +30,7 @@ def generate_title_list(urls: list[URLDict]) -> str:
     """
     lines = []
     for i, url_dict in enumerate(urls, start=1):
-        formatted = url_to_title_string(url_dict["url"])
+        formatted = url_to_title_string(url_dict.url)
         lines.append(f"{i}. {formatted}")
     return "\n".join(lines)
 
