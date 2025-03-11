@@ -143,6 +143,11 @@ def input_date(message: str, default_date: datetime) -> datetime:
             )
 
 
+def minor_infostr(msg: str) -> str:
+    """Format string to show as info on console"""
+    return f"[grey19]{msg}[/grey19]"
+
+
 def infostr(msg: str) -> str:
     """Format string to show as info on console"""
     return f"[bold]{msg}[/bold]"
@@ -156,3 +161,8 @@ def warnstr(msg: str) -> str:
 def errstr(msg: str) -> str:
     """Format string to show as error on console"""
     return f"[bold][red]{msg}[/red][/bold]"
+
+
+def urlstr(url: str) -> str:
+    """Format string to show as a URL on console"""
+    return f"[blue3][link={url}]{url}[/link][blue3]"

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from blogscraper.content_viewer import show_page_content
 from blogscraper.types import URLDict
-from blogscraper.ui import console, infostr, select_urls, warnstr
+from blogscraper.ui import console, infostr, select_urls, urlstr, warnstr
 from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
 from blogscraper.utils.time_utils import datestring
 
@@ -19,7 +19,7 @@ def generate_doc(
 
     doc_id, doc_url = create_google_doc(f"{human_start} - {human_end} blog scrape")
     write_to_google_doc(doc_id, document_content)
-    console.print(infostr(f"Created Google doc: {doc_url}"))
+    console.print(infostr(f"Created Google doc: {urlstr(doc_url)}"))
 
 
 def prepare_google_doc_content(selected_urls: list[str]) -> str:
