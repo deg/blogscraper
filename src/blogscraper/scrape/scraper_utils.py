@@ -52,7 +52,7 @@ def extend_posts_with_references(
             remote=True,
             ignore_remotes=ignore_remotes,
         )
-        references = remove_duplicates(references)
+        references = list(set(references))  # Remove duplicates
         for ref in references:
             ref_dict: URLDict = {
                 "url": ref,
@@ -63,12 +63,6 @@ def extend_posts_with_references(
             ref_dicts.append(ref_dict)
 
     return blogpost_dicts + ref_dicts
-
-
-def remove_duplicates(strs: list[str]) -> list[str]:
-    """Removes duplicate URLs while preserving order."""
-    seen = set()
-    return [str for str in strs if not (str in seen or seen.add(str))]
 
 
 def references_from(
