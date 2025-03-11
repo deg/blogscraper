@@ -44,11 +44,12 @@ def fetch_page_content(url: str) -> str | None:
         str | None: Extracted content as Markdown, or None if extraction fails.
     """
     try:
-        # Use trafilatura to extract the main content
+        # Fetch the page HTML
         downloaded = trafilatura.fetch_url(url)
         if not downloaded:
             return None
 
+        # Extract main content
         main_content = trafilatura.extract(
             downloaded,
             favor_recall=True,
