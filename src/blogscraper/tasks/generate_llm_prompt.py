@@ -2,15 +2,17 @@ from urllib.parse import urlparse
 
 from blogscraper.prompt import PROMPT_PREFIX, PROMPT_SUFFIX
 from blogscraper.types import URLDict
-from blogscraper.ui import console
+from blogscraper.ui import console, minor_infostr
 
 
 def generate_llm_prompt(ranged_urls: list[URLDict]) -> None:
     """Generates an LLM prompt based on the scraped data."""
     console.print(
-        f"[grey19]{PROMPT_PREFIX}\n\n"
-        + f"{generate_title_list(ranged_urls)}\n\n"
-        + f"{PROMPT_SUFFIX}[/grey19]"
+        minor_infostr(
+            f"{PROMPT_PREFIX}\n\n"
+            + f"{generate_title_list(ranged_urls)}\n\n"
+            + f"{PROMPT_SUFFIX}"
+        )
     )
 
 

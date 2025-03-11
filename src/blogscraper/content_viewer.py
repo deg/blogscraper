@@ -11,7 +11,7 @@ Usage:
 import requests
 import trafilatura
 
-from blogscraper.ui import console
+from blogscraper.ui import console, errstr
 
 
 def show_page_content(url: str, to_string: bool = False) -> str:
@@ -67,7 +67,7 @@ def fetch_page_content(url: str) -> str | None:
         return main_content if main_content else None
 
     except requests.RequestException as e:
-        console.print(f"[red]Failed to fetch {url}: {e}[/red]")
+        console.print(errstr(f"Failed to fetch {url}: {e}"))
         return None
 
 

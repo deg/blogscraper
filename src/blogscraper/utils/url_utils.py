@@ -13,7 +13,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from blogscraper.ui import console
+from blogscraper.ui import console, errstr
 
 
 def normalize_url(base_url: str, link: str) -> str:
@@ -41,13 +41,9 @@ def get_html(url: str) -> str | None:
     try:
         return fetch_html(url)
     except requests.HTTPError as http_err:
-        console.print(
-            f"[bold red]HTTP error while fetching {url}: {http_err}[/bold red]"
-        )
+        console.print(errstr(f"HTTP error while fetching {url}: {http_err}"))
     except requests.RequestException as req_err:
-        console.print(
-            f"[bold red]Request error while fetching {url}: {req_err}[/bold red]"
-        )
+        console.print(errstr(f"Request error while fetching {url}: {req_err}"))
     return None
 
 
