@@ -11,12 +11,73 @@ Usage:
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Callable
+from urllib.parse import urljoin, urlparse
 
+import requests
 from bs4 import BeautifulSoup, Tag
 
 from blogscraper.types import URLDict
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
+
+
+def references_from(
+    url: str,
+    wrapping_selector: str,
+    local: bool = False,
+    remote: bool = False,
+    ignore_remotes: list[str] = [],
+) -> list[str]:
+    """Extracts filtered links from a webpage based on the wrapping selector.
+
+    Args:
+        url (str): The webpage URL to scrape.
+        wrapping_selector (str): CSS selector for the container element.
+        local (bool): Include links from the same site (matching host).
+        remote (bool): Include external links.
+        ignore_remotes (list[str]): List of remote hosts to ignore.
+
+    Returns:
+        list[str]: A filtered list of URLs.
+    """
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        # Get the base host
+        parsed_url = urlparse(url)
+        base_host = parsed_url.netloc.lower()
+
+        # Find all links within the wrapping selector
+        container = soup.select_one(wrapping_selector)
+        if not container:
+            return []
+
+        links = [a["href"] for a in container.find_all("a", href=True)]
+
+        # Normalize URLs and filter based on `local`, `remote`, and `ignore_remotes`
+        filtered_links = []
+        for link in links:
+            parsed_link = urlparse(link)
+            if not parsed_link.netloc:  # Relative URL
+                full_link = urljoin(url, link)
+                is_local = True  # Relative links are always local
+            else:
+                full_link = link
+                host = parsed_link.netloc.lower()
+                is_local = host == base_host
+                if host in ignore_remotes:
+                    continue
+
+            if (local and is_local) or (remote and not is_local):
+                filtered_links.append(full_link)
+
+        return filtered_links
+
+    except requests.RequestException as e:
+        print(f"Error fetching {url}: {e}")
+        return []
 
 
 def fetch_all_urls(
