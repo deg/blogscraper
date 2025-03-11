@@ -13,12 +13,62 @@ from datetime import datetime
 from typing import Callable
 from urllib.parse import urljoin, urlparse
 
-import requests
 from bs4 import BeautifulSoup, Tag
 
 from blogscraper.types import URLDict
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
+
+
+def extend_posts_with_references(
+    blogpost_dicts: list[URLDict],
+    wrapping_selector: str = "*",
+    ignore_remotes: list[str] = [],
+) -> list[URLDict]:
+    """Extends a list of blog posts with extracted references from each post.
+
+    Args:
+        blogpost_dicts (list[URLDict]): A list of blog post metadata dictionaries.
+        wrapping_selector (str, optional): CSS selector to scope link extraction.
+            Defaults to "*", which selects all links on the page.
+        ignore_remotes (list[str], optional): List of remote hosts to exclude
+            from the extracted references. Defaults to an empty list.
+
+    Returns:
+        list[URLDict]: The original list of blog posts extended with extracted
+        references with metada linking back to the original post URL and creation date.
+
+    Notes:
+        - Extracted links are filtered to include only remote references
+          (external links).
+        - Duplicate references are removed before inclusion.
+    """
+    ref_dicts: list[URLDict] = []
+    for page in blogpost_dicts:
+        references = references_from(
+            url=page["url"],
+            wrapping_selector=wrapping_selector,
+            local=False,
+            remote=True,
+            ignore_remotes=ignore_remotes,
+        )
+        references = remove_duplicates(references)
+        for ref in references:
+            ref_dict: URLDict = {
+                "url": ref,
+                "harvest_timestamp": datestring(datetime.now()),
+                "source": page["url"],
+                "creation_date": page["creation_date"],
+            }
+            ref_dicts.append(ref_dict)
+
+    return blogpost_dicts + ref_dicts
+
+
+def remove_duplicates(strs: list[str]) -> list[str]:
+    """Removes duplicate URLs while preserving order."""
+    seen = set()
+    return [str for str in strs if not (str in seen or seen.add(str))]
 
 
 def references_from(
@@ -40,44 +90,41 @@ def references_from(
     Returns:
         list[str]: A filtered list of URLs.
     """
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        # Get the base host
-        parsed_url = urlparse(url)
-        base_host = parsed_url.netloc.lower()
-
-        # Find all links within the wrapping selector
-        container = soup.select_one(wrapping_selector)
-        if not container:
-            return []
-
-        links = [a["href"] for a in container.find_all("a", href=True)]
-
-        # Normalize URLs and filter based on `local`, `remote`, and `ignore_remotes`
-        filtered_links = []
-        for link in links:
-            parsed_link = urlparse(link)
-            if not parsed_link.netloc:  # Relative URL
-                full_link = urljoin(url, link)
-                is_local = True  # Relative links are always local
-            else:
-                full_link = link
-                host = parsed_link.netloc.lower()
-                is_local = host == base_host
-                if host in ignore_remotes:
-                    continue
-
-            if (local and is_local) or (remote and not is_local):
-                filtered_links.append(full_link)
-
-        return filtered_links
-
-    except requests.RequestException as e:
-        print(f"Error fetching {url}: {e}")
+    html = get_html(url)
+    if html is None:
         return []
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Get the base host
+    parsed_url = urlparse(url)
+    base_host = parsed_url.netloc.lower()
+
+    # Find all links within the wrapping selector
+    container = soup.select_one(wrapping_selector)
+    if not container:
+        return []
+
+    links = [a["href"] for a in container.find_all("a", href=True)]
+
+    # Normalize URLs and filter based on `local`, `remote`, and `ignore_remotes`
+    filtered_links = []
+    for link in links:
+        parsed_link = urlparse(link)
+        if not parsed_link.netloc:  # Relative URL
+            full_link = urljoin(url, link)
+            is_local = True  # Relative links are always local
+        else:
+            full_link = link
+            host = parsed_link.netloc.lower()
+            is_local = host == base_host
+            if host in ignore_remotes:
+                continue
+
+        if (local and is_local) or (remote and not is_local):
+            filtered_links.append(full_link)
+
+    return filtered_links
 
 
 def fetch_all_urls(

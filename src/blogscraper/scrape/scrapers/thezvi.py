@@ -4,7 +4,7 @@ from datetime import datetime
 from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.time_utils import datestring
 
-from ..scraper_utils import fetch_all_urls, references_from
+from ..scraper_utils import extend_posts_with_references, fetch_all_urls
 
 # Define a constant for the number of threads
 MAX_WORKERS = 5
@@ -25,37 +25,16 @@ def scrape_thezvi(scraper: Scraper) -> list[URLDict]:
         url_date_parser=extract_thezvi_date,
     )
 
-    ref_dicts: list[URLDict] = []
-    for page in blogpost_dicts:
-        references = references_from(
-            url=page["url"],
-            wrapping_selector="div#content",
-            local=False,
-            remote=True,
-            ignore_remotes=[
-                "thezvi.substack.com",
-                "x.com",
-                "twitter.com",
-                "www.youtube.com",
-            ],
-        )
-        references = remove_duplicates(references)
-        for ref in references:
-            ref_dict: URLDict = {
-                "url": ref,
-                "harvest_timestamp": datestring(datetime.now()),
-                "source": page["url"],
-                "creation_date": page["creation_date"],
-            }
-            ref_dicts.append(ref_dict)
-
-    return blogpost_dicts + ref_dicts
-
-
-def remove_duplicates(strs: list[str]) -> list[str]:
-    """Removes duplicate URLs while preserving order."""
-    seen = set()
-    return [str for str in strs if not (str in seen or seen.add(str))]
+    return extend_posts_with_references(
+        blogpost_dicts=blogpost_dicts,
+        wrapping_selector="div#content",
+        ignore_remotes=[
+            "thezvi.substack.com",
+            "twitter.com",
+            "www.youtube.com",
+            "x.com",
+        ],
+    )
 
 
 def extract_thezvi_date(url: str) -> str:
