@@ -86,7 +86,9 @@ def select_google_docs(docs: list[GDoc], action: str) -> list[GDoc]:
     response = questionary.checkbox(
         f"Select Google Docs to {action}:",
         choices=[
-            Choice(f"{doc.createdTime} - {doc.name}", value=doc, checked=False)
+            Choice(
+                f"{doc.createdTime} - {doc.name} ({doc.url})", value=doc, checked=False
+            )
             for doc in docs
         ],
     ).unsafe_ask()
