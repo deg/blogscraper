@@ -21,6 +21,7 @@ dependencies = [
   "requests==2.32.3",
   "rich==13.9.4",
   "trafilatura==2.0.0",
+  "dotenv==0.9.9",
 ]
 
 [project.optional-dependencies]
