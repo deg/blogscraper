@@ -51,4 +51,4 @@ class Scraper:
 
     name: str
     base_url: str
-    function: Callable[["Scraper"], list[URLDict]]
+    function: Callable[["Scraper", list[URLDict]], list[URLDict]]

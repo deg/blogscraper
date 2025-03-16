@@ -23,7 +23,7 @@ def run_scrapers(
     all_new_urls = []
     for index, scraper in enumerate(scrapers):
         if str(index) in selected_sites:
-            all_new_urls.extend(scraper.function(scraper))
+            all_new_urls.extend(scraper.function(scraper, existing_urls))
 
     unique_new_urls = deduplicate_urls(all_new_urls, existing_urls)
     save_stored_urls(existing_urls + unique_new_urls)

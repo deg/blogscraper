@@ -7,7 +7,9 @@ from blogscraper.utils.time_utils import datestring
 from ..scraper_utils import extend_posts_with_references, fetch_all_urls
 
 
-def scrape_simonwillison(scraper: Scraper) -> list[URLDict]:
+def scrape_simonwillison(
+    scraper: Scraper, existing_urls: list[URLDict]
+) -> list[URLDict]:
     """
     Scrapes Simon Willison's blog for URLs.
 
@@ -24,6 +26,7 @@ def scrape_simonwillison(scraper: Scraper) -> list[URLDict]:
 
     return extend_posts_with_references(
         blogpost_dicts=blogpost_dicts,
+        existing_urls=existing_urls,
         wrapping_selector="div.entryPage",
         ignore_remotes=[
             "twitter.com",

@@ -24,6 +24,7 @@ from blogscraper.utils.url_utils import get_html, normalize_url
 
 def extend_posts_with_references(
     blogpost_dicts: list[URLDict],
+    existing_urls: list[URLDict],
     wrapping_selector: str = "*",
     ignore_remotes: list[str] = [],
 ) -> list[URLDict]:
@@ -31,6 +32,7 @@ def extend_posts_with_references(
 
     Args:
         blogpost_dicts (list[URLDict]): A list of blog post metadata dictionaries.
+        existing_urls: (list[URLDict]): URLs that we've previously stored.
         wrapping_selector (str, optional): CSS selector to scope link extraction.
             Defaults to "*", which selects all links on the page.
         ignore_remotes (list[str], optional): List of remote hosts to exclude
@@ -58,7 +60,15 @@ def extend_posts_with_references(
 
         task = progress.add_task("Extracting references...", total=len(blogpost_dicts))
 
+        # Extract URLs from existing URLDict objects for fast lookup
+        # [TODO] This should be hoisted to caller. (Waiting for now, because I'm not
+        # convinced that we won't want other fields of each URLDict in the near future.)
+        existing_urls_set = {url_dict.url for url_dict in existing_urls}
+
         for page in blogpost_dicts:
+            if page.url in existing_urls_set:
+                progress.advance(task)
+                continue
             references = references_from(
                 url=page.url,
                 wrapping_selector=wrapping_selector,
