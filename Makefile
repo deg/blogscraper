@@ -77,6 +77,8 @@ lint:
 	@poetry run pyright . || lint_failed=1
 	@echo "🔍 Running Mypy..."
 	@poetry run mypy . || lint_failed=1
+	@echo "🔍 Running Flake8..."
+	@poetry run flake8 || lint_failed=1
 	@exit $${lint_failed:-0}
 
 

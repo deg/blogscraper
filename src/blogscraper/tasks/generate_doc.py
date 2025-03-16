@@ -49,7 +49,9 @@ def generate_doc(
         raise ValueError(f"Unsupported document format: '{format}'")
 
 
-def prepare_google_doc_content(selected_urls: list[str], max_length=999_999_999) -> str:
+def prepare_google_doc_content(
+    selected_urls: list[str], max_length: int = 999_999_999
+) -> str:
     """Prepares the content for the Google Document."""
     text = "<!-- This document is a set of blog posts focused on AI innovations -->\n\n"
     text += "<!-- TABLE OF CONTENTS -->\n\n"

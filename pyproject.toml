@@ -25,6 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "flake8==7.1.2",
   "mypy==1.15.0",
   "pre-commit==4.1.0",
   "pyright==1.1.396",
@@ -48,10 +49,6 @@ target-version = ["py311"]
 
 [tool.isort]
 profile = "black"
-
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203"]
 
 [tool.mypy]
 strict = true

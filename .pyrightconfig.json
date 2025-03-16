@@ -1,5 +1,5 @@
 {
-    "exclude": ["**/venv", "**/build", "**/__pycache__"],
+    "exclude": ["**/.venv", "**/build", "**/__pycache__"],
     "reportAttributeAccessIssue": false,
     "reportUnknownMemberType": true,
     "reportMissingImports": false,
