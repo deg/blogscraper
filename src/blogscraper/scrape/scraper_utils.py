@@ -14,8 +14,10 @@ from typing import Callable
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup, Tag
+from rich.progress import BarColumn, Progress, TimeRemainingColumn
 
 from blogscraper.types import URLDict
+from blogscraper.ui import errstr
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
@@ -36,31 +38,45 @@ def extend_posts_with_references(
 
     Returns:
         list[URLDict]: The original list of blog posts extended with extracted
-        references with metada linking back to the original post URL and creation date.
+        references with metadata linking back to the original post URL and creation
+        date.
 
     Notes:
         - Extracted links are filtered to include only remote references
           (external links).
         - Duplicate references are removed before inclusion.
+
     """
     ref_dicts: list[URLDict] = []
-    for page in blogpost_dicts:
-        references = references_from(
-            url=page.url,
-            wrapping_selector=wrapping_selector,
-            local=False,
-            remote=True,
-            ignore_remotes=ignore_remotes,
-        )
-        references = list(set(references))  # Remove duplicates
-        for ref in references:
-            ref_dict = URLDict(
-                url=ref,
-                harvest_timestamp=datestring(datetime.now()),
-                source=page.url,
-                creation_date=page.creation_date,
+
+    with Progress(
+        "[progress.description]{task.description}",
+        BarColumn(),
+        "[progress.percentage]{task.percentage:>3.0f}%",
+        TimeRemainingColumn(),
+    ) as progress:
+
+        task = progress.add_task("Extracting references...", total=len(blogpost_dicts))
+
+        for page in blogpost_dicts:
+            references = references_from(
+                url=page.url,
+                wrapping_selector=wrapping_selector,
+                local=False,
+                remote=True,
+                ignore_remotes=ignore_remotes,
             )
-            ref_dicts.append(ref_dict)
+            references = list(set(references))  # Remove duplicates
+            for ref in references:
+                ref_dict = URLDict(
+                    url=ref,
+                    harvest_timestamp=datestring(datetime.now()),
+                    source=page.url,
+                    creation_date=page.creation_date,
+                )
+                ref_dicts.append(ref_dict)
+
+            progress.advance(task)
 
     return blogpost_dicts + ref_dicts
 
@@ -275,14 +291,27 @@ def fetch_multiple_pages(
     """
     results = []
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_url = {executor.submit(scraper_function, url): url for url in urls}
+    with Progress(
+        "[progress.description]{task.description}",
+        BarColumn(),
+        "[progress.percentage]{task.percentage:>3.0f}%",
+        TimeRemainingColumn(),
+    ) as progress:
 
-        for future in as_completed(future_to_url):
-            url = future_to_url[future]
-            try:
-                results.extend(future.result())
-            except Exception as e:
-                print(f"Error fetching {url}: {e}")
+        task = progress.add_task("Fetching pages...", total=len(urls))
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_url = {
+                executor.submit(scraper_function, url): url for url in urls
+            }
+
+            for future in as_completed(future_to_url):
+                url = future_to_url[future]
+                progress.advance(task)
+
+                try:
+                    results.extend(future.result())
+                except Exception as e:
+                    progress.console.print(errstr(f"Error fetching {url}: {e}"))
 
     return results
