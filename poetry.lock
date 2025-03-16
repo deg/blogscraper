@@ -2168,4 +2168,4 @@ dev = ["black", "flake8", "gitingest", "ipython", "isort", "mypy", "pre-commit",
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "ccc3f7216fcde17acbfe9ce78a17a345f3b440b3e85e2e88d4951b52916ab155"
+content-hash = "d28ba1cd2aee675c0ca3ca4987f770d9627159ace9ffac6f5463a721e230c352"
