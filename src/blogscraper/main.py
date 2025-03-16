@@ -47,7 +47,10 @@ def main() -> None:
         list_urls(ranged_urls)
 
     if confirm_action("Generate a consolidated Google Doc?"):
-        generate_doc(ranged_urls, start_day, end_day)
+        generate_doc(ranged_urls, start_day, end_day, format="Google Doc")
+
+    if confirm_action("Generate a consolidated Markdown file?"):
+        generate_doc(ranged_urls, start_day, end_day, format="Markdown")
 
     if confirm_action("Generate an ad-hoc LLM prompt?"):
         generate_llm_prompt(ranged_urls)
