@@ -100,6 +100,22 @@ as-llm-input:
 	poetry run gitingest -o dev-docs/blogscraper-digest.txt -e dev-docs/blogscraper-digest.txt -e data -e secrets -e .env.secret -e .specstory
 
 
+# Build the temp docker container
+.PHONY: docker-build-tmp
+docker-build-tmp:
+	docker compose build
+
+
+# Run the temp docker container
+.PHONY: docker-up-tmp
+docker-up-tmp:
+	docker compose run blogscraper --rm
+
+# Clean the temp docker container
+.PHONY: docker-down-tmp
+docker-down-tmp:
+	docker compose down --remove-orphans
+
 # Run the application
 .PHONY: run
 run:

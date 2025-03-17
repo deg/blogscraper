@@ -1,0 +1,13 @@
+services:
+  blogscraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: blogscraper:latest
+    container_name: blogscraper
+    volumes:
+      - ./data:/app/data
+    stdin_open: true  # Keeps STDIN open even if not attached
+    tty: true         # Allocates a pseudo-TTY
+    working_dir: /app
+    entrypoint: ["python", "-m", "blogscraper.main"]
