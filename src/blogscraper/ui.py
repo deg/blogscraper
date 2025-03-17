@@ -128,7 +128,7 @@ def input_text(message: str, default: str) -> str:
         str: The user-provided input.
     """
     response = questionary.text(message, default=default).unsafe_ask()
-    return response
+    return response or ""
 
 
 def input_date(message: str, default_date: datetime) -> datetime:
