@@ -96,7 +96,9 @@ def select_google_docs(docs: list[GDoc], action: str) -> list[GDoc]:
     return response if response else []
 
 
-def select_urls(urlDicts: list[URLDict]) -> list[str]:
+def select_urls(
+    urlDicts: list[URLDict], prompt: str = "Select blog URLs to save:"
+) -> list[str]:
     """Prompts the user to select which blog URLs to process.
 
     Args:
@@ -106,12 +108,27 @@ def select_urls(urlDicts: list[URLDict]) -> list[str]:
         list[str]: A list of selected URLs.
     """
     response = questionary.checkbox(
-        "Select blog URLs to save:",
+        prompt,
         choices=[
             Choice(urlDict.url, value=urlDict.url, checked=True) for urlDict in urlDicts
         ],
     ).unsafe_ask()
     return list(response)
+
+
+def input_text(message: str, default: str) -> str:
+    """
+    Prompts the user to enter a text input with a default value.
+
+    Args:
+        message (str): The prompt message to display.
+        default (str): The default value to prefill in the input.
+
+    Returns:
+        str: The user-provided input.
+    """
+    response = questionary.text(message, default=default).unsafe_ask()
+    return response
 
 
 def input_date(message: str, default_date: datetime) -> datetime:
