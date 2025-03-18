@@ -9,7 +9,7 @@ description = ""
 authors = [
   { name = "David Goldfarb", email = "deg@degel.com" }
 ]
-readme = "README.md"
+readme = "../README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
   "beautifulsoup4==4.13.3",

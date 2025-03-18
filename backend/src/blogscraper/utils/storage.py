@@ -16,8 +16,9 @@ import json
 import os
 
 from blogscraper.types import URLDict
+from blogscraper.utils.sys_utils import find_project_root
 
-DATA_DIRECTORY = "data"
+DATA_DIRECTORY = find_project_root() / "data"
 URLS_FILENAME = "urls.json"
 
 

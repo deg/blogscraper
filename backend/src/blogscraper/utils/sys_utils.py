@@ -14,7 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Name of a file that is certain to exist in the project root directory
-A_FILE_IN_ROOT_DIR = "Makefile"
+A_FILE_IN_ROOT_DIR = ".git"
 
 
 def find_project_root(start_path: Path = Path(__file__)) -> Path:

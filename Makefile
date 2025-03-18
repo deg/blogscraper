@@ -1,12 +1,12 @@
-# Use Bash for shell commands
+# Use-C Bash for shell commands
 SHELL := /bin/bash
 
 # Project Name
-PROJECT_NAME := "blogscraper"
+PROJECT_NAME := blogscraper
 
 .DEFAULT_GOAL := help
 
-# Show this help message
+# Show help message
 .PHONY: help
 help:
 	@echo -e "\033[1;34mUsage:\033[0m make [target]"
@@ -30,74 +30,30 @@ help:
 	}' $(MAKEFILE_LIST) | sort
 	@echo ""
 
+# Generate an LLM-ready copy of this repo. (Doesn't really work yet; just does backend)
+.PHONY: as-llm-input
+as-llm-input:
+	$(MAKE) -C backend as-llm-input
+
 
 # Setup the development environment
 .PHONY: setup-dev-env
-setup-dev-env: update install lint
+setup-dev-env: install lint
 	@echo "🚀 Setting up Git hooks..."
-	poetry run pre-commit install
+	$(shell cd backend && poetry env info -p)/bin/pre-commit install
 	@if [ -f .git/hooks/pre-commit ]; then chmod +x .git/hooks/pre-commit; fi
 	@echo "✅ Development environment is ready!"
 
 
-# Sync dependencies, updating poetry.lock and .venv
-.PHONY: update
-update:
-	poetry update
 
-
-# Install dependencies from poetry.lock
+# Install dependencies
 .PHONY: install
 install:
-	poetry install --extras dev
-
-
-# List all outdated dependencies (direct dependencies only)
-.PHONY: outdated
-outdated:
-	poetry show --outdated --top-level
-
-
-# List all outdated dependencies (including transitive dependencies)
-.PHONY: outdated-all
-outdated-all:
-	poetry show --outdated
-
-
-# Lint all files (fails on errors)
-.PHONY: lint
-lint:
-	@echo "🔍 Running Black..."
-	@poetry run black --check . || lint_failed=1
-	@echo "🔍 Running isort..."
-	@poetry run isort --check-only src  || lint_failed=1
-	@echo "🔍 Running Ruff..."
-	@poetry run ruff check . || lint_failed=1
-	@echo "🔍 Running Pyright..."
-	@poetry run pyright . || lint_failed=1
-	@echo "🔍 Running Mypy..."
-	@poetry run mypy . || lint_failed=1
-	@echo "🔍 Running Flake8..."
-	@poetry run flake8 || lint_failed=1
-	@exit $${lint_failed:-0}
-
-
-# Run tests
-.PHONY: test
-test:
-	poetry run pytest --maxfail=1 --disable-warnings
-
-
-# Run test coverage (with 80% minimum threshold)
-.PHONY: coverage
-coverage:
-	poetry run pytest --cov=. --cov-report=term-missing --cov-fail-under=80
-
-
-# Generate an LLM-ready copy of this repo
-.PHONY: as-llm-input
-as-llm-input:
-	poetry run gitingest -o dev-docs/blogscraper-digest.txt -e dev-docs/blogscraper-digest.txt -e data -e secrets -e .env.secret -e .specstory
+	@echo "📦 Installing dependencies for backend..."
+	@$(MAKE) -C backend install || exit 1
+	@echo "📦 Installing dependencies for frontend..."
+	@$(MAKE) -C frontend install || exit 1
+	@echo "📦 Installation complete for all components."
 
 
 # Build the temp docker container
@@ -111,20 +67,45 @@ docker-build-tmp:
 docker-up-tmp:
 	docker compose run blogscraper --rm
 
+
 # Clean the temp docker container
 .PHONY: docker-down-tmp
 docker-down-tmp:
 	docker compose down --remove-orphans
 
-# Run the application
-.PHONY: run
-run:
-	@echo "🚀 Running the application..."
-	poetry run python -m blogscraper.main
+
+# Run the backend
+.PHONY: run-backend
+run-backend:
+	@$(MAKE) -C backend run
 
 
-# Debug the application with PDB
-.PHONY: debug
-debug:
-	@echo "🐞 Running the application in debug mode..."
-	poetry run python -m pdb -m blogscraper.main
+# Lint all components
+.PHONY: lint
+lint:
+	@echo "🔍 Running lint in backend..."
+	@$(MAKE) -C backend lint || exit 1
+	@echo "🔍 Running lint in frontend..."
+	@$(MAKE) -C frontend lint || exit 1
+	@echo "✅ Linting completed for all components."
+
+
+# Clean all components
+.PHONY: clean
+clean:
+	@echo "🧹 Cleaning backend..."
+	@$(MAKE) -C backend clean || exit 1
+	@echo "🧹 Cleaning frontend..."
+	@$(MAKE) -C frontend clean || exit 1
+	@echo "🧹 Cleaned all components."
+
+
+# List all outdated components
+.PHONY: outdated
+outdated:
+	@echo "❗ Checking backend..."
+	@$(MAKE) -C backend outdated || exit 1
+	@echo "🧹 Checking frontend..."
+	@$(MAKE) -C frontend outdated || exit 1
+	@echo "🧹 Checked all components."
+
