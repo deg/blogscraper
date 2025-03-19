@@ -36,4 +36,4 @@ Thumbs.db
 # ~/.deepface/
 
 # Project-specific files
-/dev-docs/blogscraper-digest.txt
+/dev-docs/*-digest.txt
