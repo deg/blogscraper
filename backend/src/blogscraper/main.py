@@ -12,7 +12,7 @@ Usage:
 import asyncio
 import sys
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Dict
+from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
 from fastapi import FastAPI
@@ -63,17 +63,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 # Store task status
-scrape_tasks: Dict[str, str] = {}
-
-
-async def run_scrape(task_id: str) -> None:
-    """Runs scrape_blogs(False) and updates task status."""
-    scrape_tasks[task_id] = "running"
-    try:
-        await asyncio.to_thread(scrape_blogs, do_all=True, erase_old=False)
-        scrape_tasks[task_id] = "completed"
-    except Exception as e:
-        scrape_tasks[task_id] = f"failed: {str(e)}"
+scrape_tasks: dict[str, str] = {}
 
 
 @app.post("/scrape")
@@ -81,8 +71,30 @@ async def start_scrape() -> dict[str, str]:
     """Starts scraping in an async background task."""
     task_id = str(len(scrape_tasks) + 1)
     scrape_tasks[task_id] = "queued"
-    asyncio.create_task(run_scrape(task_id))
+
+    asyncio.create_task(_run_scrape(task_id))
+
     return {"task_id": task_id, "status": "started"}
+
+
+async def _run_scrape(task_id: str) -> None:
+    """Runs scrape_blogs(False) asynchronously and updates task status."""
+    scrape_tasks[task_id] = "running"
+
+    def status_callback(status: str) -> None:
+        """Updates task status with intermediate progress."""
+        scrape_tasks[task_id] = f"running: {status}"
+
+    try:
+        await asyncio.to_thread(
+            scrape_blogs,
+            do_all=True,
+            erase_old=False,
+            status_callback=status_callback,
+        )
+        scrape_tasks[task_id] = "completed"
+    except Exception as e:
+        scrape_tasks[task_id] = f"failed: {str(e)}"
 
 
 @app.get("/scrape/status/{task_id}")
