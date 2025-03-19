@@ -33,7 +33,9 @@ help:
 # Generate an LLM-ready copy of this repo. (Doesn't really work yet; just does backend)
 .PHONY: as-llm-input
 as-llm-input:
-	$(MAKE) -C backend as-llm-input
+	poetry -C backend run gitingest https://github.com/deg/blogscraper \
+	-o ../dev-docs/blogscraper-digest.txt \
+	-e .specstory
 
 
 # Setup the development environment

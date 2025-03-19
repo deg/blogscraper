@@ -1,9 +1,3 @@
-# Generate an LLM-ready copy of this repo. (Doesn't really work yet; just does backend)
-.PHONY: as-llm-input
-as-llm-input:
-	poetry run gitingest -o ../dev-docs/blogscraper-digest.txt -e ../dev-docs/blogscraper-digest.txt -e ../data -e ../secrets -e ../.env.secret -e ../nn.specstory
-
-
 # Install dependencies from poetry.lock
 .PHONY: install
 install:
