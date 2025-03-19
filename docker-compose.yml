@@ -1,13 +1,29 @@
 services:
-  blogscraper:
+  blo_db:
+    image: mongo:8.0.4
+    container_name: blo_mongodb
+    volumes:
+      - ./mongoDB_data:/data/db
+      - ./mongoDB_config:/data/configdb
+      - ./mongoDB_backups:/backups
+    ports:
+      - "${MONGODB_PORT}:27017"
+  blo_backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     image: blogscraper:latest
     container_name: blogscraper
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:8000"
     volumes:
       - ./backend/src:/app/src
       - ./data:/app/data
-    command:  ["poetry", "run", "uvicorn", "blogscraper.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: [
+      "poetry", "run", "uvicorn", "blogscraper.main:app",
+      "--host", "0.0.0.0",
+      "--port", "8000",
+      "--reload"
+    ]
+    depends_on:
+      - blo_db

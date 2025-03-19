@@ -61,27 +61,15 @@ install:
 	@echo "📦 Installation complete for all components."
 
 
-# Build the temp docker container
-.PHONY: docker-build-tmp
-docker-build-tmp:
-	docker compose build
-
-
-# Run the temp docker container
-.PHONY: docker-up-tmp
-docker-up-tmp:
-	docker compose run blogscraper --rm
-
-
 # Run the docker container
 .PHONY: docker-up
 docker-up:
-	docker compose up --build
+	docker compose up --build -d && docker compose logs -f blo_backend
 
 
 # Clean the temp docker container
-.PHONY: docker-down-tmp
-docker-down-tmp:
+.PHONY: docker-down
+docker-down:
 	docker compose down --remove-orphans
 
 

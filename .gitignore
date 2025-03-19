@@ -32,8 +32,6 @@ Thumbs.db
 *.avi
 *.mkv
 
-# DeepFace Cached Models
-# ~/.deepface/
-
 # Project-specific files
 /dev-docs/*-digest.txt
+/mongoDB_data
