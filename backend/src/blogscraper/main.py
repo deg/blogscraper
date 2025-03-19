@@ -11,6 +11,7 @@ Usage:
 
 import sys
 from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
 from fastapi import FastAPI
@@ -36,7 +37,7 @@ logger = setup_logger(__name__)
 
 
 @asynccontextmanager
-async def server_lifespan(_: FastAPI):
+async def server_lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Handle setup and teardown of server."""
     appEnv.set_app_name(APP_NAME)
     appEnv.register_env_var("GOOGLE_SERVICE_ACCOUNT_FILE", private=True)

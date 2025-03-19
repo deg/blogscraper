@@ -36,6 +36,9 @@ as-llm-input:
 	poetry -C backend run gitingest https://github.com/deg/blogscraper \
 	-o ../dev-docs/blogscraper-digest.txt \
 	-e .specstory
+	poetry -C backend run gitingest https://github.com/deg/degel-python-utils \
+	-o ../dev-docs/degel-python-utils-digest.txt
+
 
 
 # Setup the development environment

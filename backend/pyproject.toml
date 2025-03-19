@@ -13,7 +13,8 @@ readme = "../README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
   "beautifulsoup4==4.13.3",
-  "degel-python-utils==1.0.0",
+  "degel-python-utils==1.0.2",
+  # "degel-python-utils @ file:///Users/deg/Documents/degel/degel-python-utils",
   "dotenv==0.9.9",
   "google-api-python-client==2.164.0",
   "google-auth-httplib2==0.2.0",
@@ -22,8 +23,11 @@ dependencies = [
   "questionary==2.1.0",
   "requests==2.32.3",
   "rich==13.9.4",
-  "trafilatura==2.0.0",
+  "trafilatura==2.0.0"
 ]
+
+[tool.poetry.dependencies]
+# degel-python-utils = {develop = true}
 
 [project.optional-dependencies]
 dev = [
