@@ -1,13 +1,13 @@
 services:
   blogscraper:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     image: blogscraper:latest
     container_name: blogscraper
+    ports:
+      - "8000:8000"
     volumes:
+      - ./backend/src:/app/src
       - ./data:/app/data
-    stdin_open: true  # Keeps STDIN open even if not attached
-    tty: true         # Allocates a pseudo-TTY
-    working_dir: /app
-    entrypoint: ["python", "-m", "blogscraper.main"]
+    command:  ["poetry", "run", "uvicorn", "blogscraper.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

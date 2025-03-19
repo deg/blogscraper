@@ -36,7 +36,4 @@ Thumbs.db
 # ~/.deepface/
 
 # Project-specific files
-.env.secret
-data/urls.json
-dev-docs/blogscraper-digest.txt
-secrets/
+/dev-docs/blogscraper-digest.txt

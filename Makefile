@@ -68,6 +68,12 @@ docker-up-tmp:
 	docker compose run blogscraper --rm
 
 
+# Run the docker container
+.PHONY: docker-up
+docker-up:
+	docker compose up --build
+
+
 # Clean the temp docker container
 .PHONY: docker-down-tmp
 docker-down-tmp:

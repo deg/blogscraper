@@ -8,7 +8,8 @@ WORKDIR /app
 RUN pip install --no-cache-dir poetry==2.0.1
 
 # Copy only the dependency files first to optimize caching
-COPY pyproject.toml poetry.lock README.md ./
+#- COPY pyproject.toml poetry.lock README.md ./
+COPY pyproject.toml README.md ./
 
 # Configure Poetry to create the virtual environment inside the project directory
 RUN poetry config virtualenvs.in-project true
@@ -29,5 +30,4 @@ RUN useradd -m appuser
 USER appuser
 
 # Default command to run the scraper
-CMD ["python", "-m", "blogscraper.main"]
-
+# CMD ["poetry", "run", "uvicorn", "blogscraper.main:app", "--host", "0.0.0.0", "--port", "8000"]

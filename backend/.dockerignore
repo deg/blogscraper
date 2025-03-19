@@ -1,0 +1,33 @@
+# Ignore virtual environments (especially important for Apple Silicon Mac)
+.venv/
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Git-related files
+.git/
+.gitignore
+
+# Ignore IDE/editor settings
+.vscode/
+.idea/
+*.swp  # Vim swap files
+
+# Ignore Docker-related artifacts
+Dockerfile
+docker-compose.yml
+*.dockerignore
+
+# Ignore local runtime files
+*.log
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# Ignore tool work files
+.*cache
+

@@ -15,7 +15,7 @@ install:
 .PHONY: run
 run:
 	@echo "🚀 Running the application..."
-	poetry run python -m blogscraper.main
+	poetry run uvicorn blogscraper.main:app --host 0.0.0.0 --port 8000 --reload
 
 
 # Lint all files (fails on errors)

@@ -10,6 +10,11 @@ Usage:
 """
 
 import sys
+from contextlib import asynccontextmanager
+
+from degel_python_utils import appEnv, setup_logger
+from fastapi import FastAPI
+from starlette.middleware.gzip import GZipMiddleware
 
 from blogscraper.tasks import (
     delete_unneeded_docs,
@@ -22,6 +27,42 @@ from blogscraper.tasks import (
 )
 from blogscraper.ui import confirm_action, console, display_welcome, warnstr
 from blogscraper.utils.storage import load_stored_urls
+
+APP_NAME = "Blog Scraper"
+APP_DESCRIPTION = "Summarize interesting recent AI blog posts"
+
+logger = setup_logger(__name__)
+# pylint: disable=logging-fstring-interpolation
+
+
+@asynccontextmanager
+async def server_lifespan(_: FastAPI):
+    """Handle setup and teardown of server."""
+    appEnv.set_app_name(APP_NAME)
+    appEnv.register_env_var("GOOGLE_SERVICE_ACCOUNT_FILE", private=True)
+    appEnv.show_env()
+    logger.info(f"{APP_NAME} ready")
+
+    yield
+
+    logger.major("Shut down server")
+
+
+app = FastAPI(
+    title=APP_NAME,
+    description=APP_DESCRIPTION,
+    version="1.0",
+    lifespan=server_lifespan,
+    openapi_tags=[
+        {"name": "API", "description": "Catch-all for now"},
+    ],
+)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+
+@app.get("/hello/", tags=["Test"], summary="Show signs of life")
+async def hello() -> str:
+    return "Hi there"
 
 
 def main() -> None:
