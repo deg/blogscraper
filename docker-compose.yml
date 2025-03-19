@@ -15,10 +15,13 @@ services:
     image: blogscraper:latest
     container_name: blogscraper
     ports:
-      - "${BACKEND_PORT}:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend/src:/app/src
       - ./data:/app/data
+    environment:
+      BACKEND_PORT: "${BACKEND_PORT:-8000}"
+      MONGODB_PORT: "${MONGODB_PORT:-27017}"
     command: [
       "poetry", "run", "uvicorn", "blogscraper.main:app",
       "--host", "0.0.0.0",

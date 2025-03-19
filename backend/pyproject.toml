@@ -20,10 +20,11 @@ dependencies = [
   "google-auth-httplib2==0.2.0",
   "google-auth-oauthlib==1.2.1",
   "google-auth==2.38.0",
+  "pymongo==4.11.3",
   "questionary==2.1.0",
   "requests==2.32.3",
   "rich==13.9.4",
-  "trafilatura==2.0.0"
+  "trafilatura==2.0.0",
 ]
 
 [tool.poetry.dependencies]

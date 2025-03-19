@@ -1,6 +1,7 @@
 from typing import Callable
 
 from blogscraper.types import Scraper, URLDict
+from blogscraper.utils.mongodb_helpers import PostCollection
 from blogscraper.utils.storage import (
     deduplicate_urls,
     load_stored_urls,
@@ -9,6 +10,7 @@ from blogscraper.utils.storage import (
 
 
 def run_scrapers(
+    posts_coll: PostCollection,
     selected_sites: list[str],
     scrapers: list[Scraper],
     status_callback: Callable[[str], None] | None = None,
@@ -22,6 +24,7 @@ def run_scrapers(
     Returns:
         dict[str, list[URLDict]]: A dictionary of lists of new and existing URLs.
     """
+    print(f"TEMP: {posts_coll}")
     existing_urls = load_stored_urls()
 
     all_new_urls = []
