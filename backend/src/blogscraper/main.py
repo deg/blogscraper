@@ -9,9 +9,10 @@ Usage:
 
 """
 
+import asyncio
 import sys
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import AsyncIterator, Dict
 
 from degel_python_utils import appEnv, setup_logger
 from fastapi import FastAPI
@@ -61,9 +62,33 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
-@app.get("/hello/", tags=["Test"], summary="Show signs of life")
-async def hello() -> str:
-    return "Hi there"
+# Store task status
+scrape_tasks: Dict[str, str] = {}
+
+
+async def run_scrape(task_id: str) -> None:
+    """Runs scrape_blogs(False) and updates task status."""
+    scrape_tasks[task_id] = "running"
+    try:
+        await asyncio.to_thread(scrape_blogs, do_all=True, erase_old=False)
+        scrape_tasks[task_id] = "completed"
+    except Exception as e:
+        scrape_tasks[task_id] = f"failed: {str(e)}"
+
+
+@app.post("/scrape")
+async def start_scrape() -> dict[str, str]:
+    """Starts scraping in an async background task."""
+    task_id = str(len(scrape_tasks) + 1)
+    scrape_tasks[task_id] = "queued"
+    asyncio.create_task(run_scrape(task_id))
+    return {"task_id": task_id, "status": "started"}
+
+
+@app.get("/scrape/status/{task_id}")
+async def get_scrape_status(task_id: str) -> dict[str, str]:
+    """Returns the status of a scraping task."""
+    return {"task_id": task_id, "status": scrape_tasks.get(task_id, "not found")}
 
 
 def main() -> None:
@@ -73,7 +98,7 @@ def main() -> None:
     all_urls = []
     if confirm_action("Scrape websites for new URLs?"):
         erase_old = confirm_action("Erase old DB and start fresh?", default=False)
-        all_urls = scrape_blogs(erase_old)
+        all_urls = scrape_blogs(do_all=False, erase_old=erase_old)
     else:
         all_urls = load_stored_urls()
 
