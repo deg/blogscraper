@@ -7,7 +7,10 @@ Usage:
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Callable
+
+from bson import ObjectId
 
 
 @dataclass
@@ -17,14 +20,14 @@ class URLDict:
     Attributes:
         url (str): The URL of the blog post.
         source (str): The name of the blog or website.
-        creation_date (str): The date the post was published.
-        harvest_timestamp (str): The timestamp when the URL was scraped.
+        creation_date (datetime): The date the post was published.
+        harvest_timestamp (datetime): The timestamp when the URL was scraped.
     """
 
     url: str
     source: str
-    creation_date: str
-    harvest_timestamp: str
+    creation_date: datetime
+    harvest_timestamp: datetime
 
 
 @dataclass
@@ -51,4 +54,4 @@ class Scraper:
 
     name: str
     base_url: str
-    function: Callable[["Scraper", list[URLDict]], list[URLDict]]
+    function: Callable[["Scraper", Callable[[str], None] | None], list[ObjectId]]

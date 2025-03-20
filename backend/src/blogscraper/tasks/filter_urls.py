@@ -36,9 +36,9 @@ def get_range_of_urls(
     ranged_urls = [
         url_dict
         for url_dict in urls
-        if first_date <= datetime.fromisoformat(url_dict.creation_date) <= last_date
+        if first_date <= url_dict.creation_date <= last_date
     ]
 
     # Sort the URLs by creation_date, earliest first
-    ranged_urls.sort(key=lambda x: datetime.fromisoformat(x.creation_date))
+    ranged_urls.sort(key=lambda x: x.creation_date)
     return ranged_urls

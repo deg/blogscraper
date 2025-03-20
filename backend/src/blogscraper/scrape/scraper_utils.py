@@ -14,24 +14,70 @@ from typing import Callable
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup, Tag
+from bson import ObjectId
+from dacite import from_dict
+from degel_python_utils import setup_logger
 from rich.progress import BarColumn, Progress, TimeRemainingColumn
 
-from blogscraper.types import URLDict
+from blogscraper.types import Scraper, URLDict
 from blogscraper.ui import errstr
+from blogscraper.utils.mongodb_helpers import add_post, get_posts_collection
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
+logger = setup_logger(__name__)
+# pylint: disable=logging-format-interpolation
+
+
+def standard_scraper(
+    scraper: Scraper,
+    section_selector: str,
+    wrapping_selector: str,
+    ignore_remotes: list[str],
+    archive_selector: str | None = None,
+    html_a_selector: str | None = None,
+    html_time_selector: str | None = None,
+    url_date_parser: Callable[[str], str] | None = None,
+    status_callback: Callable[[str], None] | None = None,
+) -> list[ObjectId]:
+    """
+    Scrapes a blog post website for posts and references.
+
+    Returns:
+        list[ObjectId]: Newly added MongoDB document ids
+    """
+
+    if status_callback:
+        status_callback(f"{scraper.name}: Fetching post URLs")
+    new_posts = fetch_all_urls(
+        base_url=scraper.base_url,
+        source_name=scraper.name,
+        selector=section_selector,
+        archive_selector=archive_selector,
+        html_a_selector=html_a_selector,
+        html_time_selector=html_time_selector,
+        url_date_parser=url_date_parser,
+    )
+
+    if status_callback:
+        status_callback(f"{scraper.name}: Finding reference URLs")
+    new_refs = extend_posts_with_references(
+        doc_ids=new_posts,
+        wrapping_selector=wrapping_selector,
+        ignore_remotes=ignore_remotes,
+    )
+    return new_posts + new_refs
+
 
 def extend_posts_with_references(
-    blogpost_dicts: list[URLDict],
-    existing_urls: list[URLDict],
+    doc_ids: list[ObjectId],
     wrapping_selector: str = "*",
     ignore_remotes: list[str] = [],
-) -> list[URLDict]:
+) -> list[ObjectId]:
     """Extends a list of blog posts with extracted references from each post.
 
     Args:
-        blogpost_dicts (list[URLDict]): A list of blog post metadata dictionaries.
+        doc_id (list[ObjectId]): A list of MongoDB document ids to explore.
         existing_urls: (list[URLDict]): URLs that we've previously stored.
         wrapping_selector (str, optional): CSS selector to scope link extraction.
             Defaults to "*", which selects all links on the page.
@@ -39,56 +85,41 @@ def extend_posts_with_references(
             from the extracted references. Defaults to an empty list.
 
     Returns:
-        list[URLDict]: The original list of blog posts extended with extracted
-        references with metadata linking back to the original post URL and creation
-        date.
+        list[ObjectId]: Newly added MongoDB document ids
 
+    Side effects:
+       Adds all newly-discovered pages to the MongoDB.
     Notes:
         - Extracted links are filtered to include only remote references
           (external links).
         - Duplicate references are removed before inclusion.
 
     """
-    ref_dicts: list[URLDict] = []
+    ids = []
+    posts_coll = get_posts_collection()
+    raw_documents = list(posts_coll.find({"_id": {"$in": doc_ids}}, {"_id": 0}))
+    blogpost_dicts = [from_dict(URLDict, doc) for doc in raw_documents]
 
-    with Progress(
-        "[progress.description]{task.description}",
-        BarColumn(),
-        "[progress.percentage]{task.percentage:>3.0f}%",
-        TimeRemainingColumn(),
-    ) as progress:
-
-        task = progress.add_task("Extracting references...", total=len(blogpost_dicts))
-
-        # Extract URLs from existing URLDict objects for fast lookup
-        # [TODO] This should be hoisted to caller. (Waiting for now, because I'm not
-        # convinced that we won't want other fields of each URLDict in the near future.)
-        existing_urls_set = {url_dict.url for url_dict in existing_urls}
-
-        for page in blogpost_dicts:
-            if page.url in existing_urls_set:
-                progress.advance(task)
-                continue
-            references = references_from(
-                url=page.url,
-                wrapping_selector=wrapping_selector,
-                local=False,
-                remote=True,
-                ignore_remotes=ignore_remotes,
+    for page in blogpost_dicts:
+        references = references_from(
+            url=page.url,
+            wrapping_selector=wrapping_selector,
+            local=False,
+            remote=True,
+            ignore_remotes=ignore_remotes,
+        )
+        references = list(set(references))  # Remove duplicates
+        for ref in references:
+            ref_dict = URLDict(
+                url=ref,
+                harvest_timestamp=datetime.now(),
+                source=page.url,
+                creation_date=page.creation_date,
             )
-            references = list(set(references))  # Remove duplicates
-            for ref in references:
-                ref_dict = URLDict(
-                    url=ref,
-                    harvest_timestamp=datestring(datetime.now()),
-                    source=page.url,
-                    creation_date=page.creation_date,
-                )
-                ref_dicts.append(ref_dict)
+            if id := add_post(ref_dict):
+                ids.append(id)
 
-            progress.advance(task)
-
-    return blogpost_dicts + ref_dicts
+    return ids
 
 
 def references_from(
@@ -155,7 +186,7 @@ def fetch_all_urls(
     html_a_selector: str | None = None,
     html_time_selector: str | None = None,
     url_date_parser: Callable[[str], str] | None = None,
-) -> list[URLDict]:
+) -> list[ObjectId]:
     """
     Fetches URLs from both the main page and archive pages.
 
@@ -220,8 +251,13 @@ def fetch_and_parse_urls(
     html_a_selector: str | None = None,
     html_time_selector: str | None = None,
     url_date_parser: Callable[[str], str] | None = None,
-) -> list[URLDict]:
+) -> list[ObjectId]:
     """Finds and extracts URLs from a given webpage using a CSS selector.
+
+    Note that these pages webpages are collections of blog posts, and that the page
+    contents changes as new posts are added. Therefore, we cache the individual post
+    pages (we can assume that a blog post is invariant once posted) but we do not cache
+    the container pages.
 
     Args:
         base_url (str): The base URL of the blog or archive page.
@@ -231,10 +267,12 @@ def fetch_and_parse_urls(
                 its URL.
 
     Returns:
-        list[URLDict]: A list of extracted URLDict objects containing
-        URLs, timestamps, and source information.
+        list[ObjectId]: Newly added MongoDB document ids
+
+    Side effects:
+       Adds all newly-discovered pages to the MongoDB.
     """
-    urls: list[URLDict] = []
+    ids = []
 
     html = get_html(base_url)
     if html is None:
@@ -273,27 +311,29 @@ def fetch_and_parse_urls(
             continue
         url_dict = URLDict(
             url=absolute_url,
-            harvest_timestamp=datestring(datetime.now()),
+            harvest_timestamp=datetime.now(),  # datestring(datetime.now()),
             source=source,
-            creation_date=creation_date_str,
+            creation_date=creation_date,  # creation_date_str,
         )
-        urls.append(url_dict)
 
-    return urls
+        if id := add_post(url_dict):
+            ids.append(id)
+
+    return ids
 
 
 def fetch_multiple_pages(
     urls: list[str],
-    scraper_function: Callable[[str], list[URLDict]],
+    scraper_function: Callable[[str], list[ObjectId]],
     max_workers: int = 5,
-) -> list[URLDict]:
+) -> list[ObjectId]:
     """
     Fetch multiple pages in parallel using ThreadPoolExecutor.
 
     Args:
         urls (list[str]): List of page URLs to scrape.
         scraper_function (Callable[[str], list[URLDict]]):
-            Function that takes a URL and returns a list of extracted URLs.
+            Function that takes a URL and returns a list of new MongoDB doc ids.
         max_workers (int): Number of parallel workers (default: 5).
 
     Returns:

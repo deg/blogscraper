@@ -11,10 +11,10 @@ Usage:
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, cast
+from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from starlette.middleware.gzip import GZipMiddleware
 
 from blogscraper.tasks import scrape_blogs
@@ -29,12 +29,7 @@ from blogscraper.tasks import scrape_blogs
 # -     scrape_blogs,
 # - )
 # - from blogscraper.ui import confirm_action, console, display_welcome, warnstr
-from blogscraper.utils.mongodb_helpers import (
-    BlogCollection,
-    BlogDatabase,
-    PostCollection,
-    init_db,
-)
+from blogscraper.utils.mongodb_helpers import close_db, init_db, the_db
 
 # - from blogscraper.utils.storage import load_stored_urls
 
@@ -46,22 +41,6 @@ logger = setup_logger(__name__)
 # pylint: disable=logging-fstring-interpolation
 
 
-# Global variables for database and collections
-db: BlogDatabase | None = None
-collections: dict[str, BlogCollection] = {}
-
-
-def get_collection(name: str) -> BlogCollection:
-    """Dependency to provide a specific MongoDB collection."""
-    if name not in collections:
-        raise ValueError(f"Collection {name} does not exist")
-    return collections[name]
-
-
-def get_posts() -> PostCollection:
-    return cast(PostCollection, get_collection("posts"))
-
-
 @asynccontextmanager
 async def server_lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Handle setup and teardown of server."""
@@ -71,18 +50,18 @@ async def server_lifespan(_: FastAPI) -> AsyncIterator[None]:
     appEnv.register_env_var("GOOGLE_SERVICE_ACCOUNT_FILE", private=True)
     appEnv.show_env()
 
-    global db, collections
-    collections, db = init_db()
-    logger.info(f"Connected to MongoDB: {db.name}")
-
-    logger.info(f"✅ {APP_NAME} ready")
+    init_db()
+    db = the_db()
+    if db is None:
+        logger.error("Failed to initialize MongoDB connection")
+        logger.warning(f"⚠️ {APP_NAME} ready, but probably not stable")
+    else:
+        logger.info(f"Connected to MongoDB: {db.name}")
+        logger.info(f"✅ {APP_NAME} ready")
 
     yield
 
-    if db is not None:
-        db.client.close()
-        logger.info("MongoDB connection closed")
-
+    close_db()
     logger.major("🛑 Shut down server")
 
 
@@ -110,18 +89,18 @@ scrape_tasks: dict[str, str] = {}
 
 @app.post("/scrape", tags=["API"])
 async def start_scrape(
-    posts_coll: PostCollection = Depends(get_posts),
+    # posts_coll: PostCollection = Depends(get_posts_collection),
 ) -> dict[str, str]:
     """Starts scraping in an async background task."""
     task_id = str(len(scrape_tasks) + 1)
     scrape_tasks[task_id] = "queued"
 
-    asyncio.create_task(_run_scrape(task_id, posts_coll))
+    asyncio.create_task(_run_scrape(task_id))
 
     return {"task_id": task_id, "status": "started"}
 
 
-async def _run_scrape(task_id: str, posts_coll: PostCollection) -> None:
+async def _run_scrape(task_id: str) -> None:
     """Runs scrape_blogs(False) asynchronously and updates task status."""
     scrape_tasks[task_id] = "running"
 
@@ -134,7 +113,6 @@ async def _run_scrape(task_id: str, posts_coll: PostCollection) -> None:
             scrape_blogs,
             do_all=True,
             erase_old=False,
-            posts_coll=posts_coll,
             status_callback=status_callback,
         )
         scrape_tasks[task_id] = "completed"

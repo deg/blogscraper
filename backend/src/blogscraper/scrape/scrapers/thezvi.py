@@ -1,33 +1,29 @@
 import re
 from datetime import datetime
+from typing import Callable
 
-from blogscraper.types import Scraper, URLDict
+from bson import ObjectId
+
+from blogscraper.types import Scraper
 from blogscraper.utils.time_utils import datestring
 
-from ..scraper_utils import extend_posts_with_references, fetch_all_urls
-
-# Define a constant for the number of threads
-MAX_WORKERS = 5
+from ..scraper_utils import standard_scraper
 
 
-def scrape_thezvi(scraper: Scraper, existing_urls: list[URLDict]) -> list[URLDict]:
+def scrape_thezvi(
+    scraper: Scraper, status_callback: Callable[[str], None] | None = None
+) -> list[ObjectId]:
     """
     Scrapes The Zvi's blog for URLs, including archived old posts.
 
     Returns:
-        list[URLDict]: A list of URLDict objects.
+        list[ObjectId]: Newly added MongoDB document ids
     """
-    blogpost_dicts = fetch_all_urls(
-        base_url=scraper.base_url,
-        source_name=scraper.name,
-        selector="h2.entry-title a",
+    return standard_scraper(
+        scraper=scraper,
+        section_selector="h2.entry-title a",
         archive_selector="li#archives-2 a",
         url_date_parser=extract_thezvi_date,
-    )
-
-    return extend_posts_with_references(
-        blogpost_dicts=blogpost_dicts,
-        existing_urls=existing_urls,
         wrapping_selector="div#content",
         ignore_remotes=[
             "thezvi.substack.com",
@@ -35,6 +31,7 @@ def scrape_thezvi(scraper: Scraper, existing_urls: list[URLDict]) -> list[URLDic
             "www.youtube.com",
             "x.com",
         ],
+        status_callback=status_callback,
     )
 
 

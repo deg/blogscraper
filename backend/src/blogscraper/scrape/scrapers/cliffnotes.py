@@ -1,30 +1,31 @@
-from blogscraper.types import Scraper, URLDict
+from typing import Callable
 
-from ..scraper_utils import extend_posts_with_references, fetch_all_urls
+from bson import ObjectId
+
+from blogscraper.types import Scraper
+
+from ..scraper_utils import standard_scraper
 
 
-def scrape_cliffnotes(scraper: Scraper, existing_urls: list[URLDict]) -> list[URLDict]:
+def scrape_cliffnotes(
+    scraper: Scraper, status_callback: Callable[[str], None] | None = None
+) -> list[ObjectId]:
     """
     Scrapes Cliffnotes's blog for URLs.
 
     Returns:
-        list[URLDict]: A list of URLDict objects.
+        list[ObjectId]: Newly added MongoDB document ids
     """
-    blogpost_dicts = fetch_all_urls(
-        base_url=scraper.base_url,
-        source_name=scraper.name,
-        selector='a[href^="/p/"]:has(time)',
-        html_time_selector="time[datetime]",
-    )
-
-    return extend_posts_with_references(
-        blogpost_dicts=blogpost_dicts,
-        existing_urls=existing_urls,
+    return standard_scraper(
+        scraper=scraper,
+        section_selector='a[href^="/p/"]:has(time)',
         wrapping_selector="div.rendered-post",
+        html_time_selector="time[datetime]",
         ignore_remotes=[
             "courses.cliffnotes.ai",
             "twitter.com",
             "www.youtube.com",
             "x.com",
         ],
+        status_callback=status_callback,
     )
