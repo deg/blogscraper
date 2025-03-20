@@ -15,13 +15,12 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup, Tag
 from bson import ObjectId
-from dacite import from_dict
 from degel_python_utils import setup_logger
 from rich.progress import BarColumn, Progress, TimeRemainingColumn
 
 from blogscraper.types import Scraper, URLDict
 from blogscraper.ui import errstr
-from blogscraper.utils.mongodb_helpers import add_post, get_posts_collection
+from blogscraper.utils.mongodb_helpers import add_post, get_documents
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
@@ -96,9 +95,7 @@ def extend_posts_with_references(
 
     """
     ids = []
-    posts_coll = get_posts_collection()
-    raw_documents = list(posts_coll.find({"_id": {"$in": doc_ids}}, {"_id": 0}))
-    blogpost_dicts = [from_dict(URLDict, doc) for doc in raw_documents]
+    blogpost_dicts = get_documents(doc_ids)
 
     for page in blogpost_dicts:
         references = references_from(

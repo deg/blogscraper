@@ -11,13 +11,16 @@ Usage:
 
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import date, datetime
 from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Query
+from pydantic import BaseModel, Field
 from starlette.middleware.gzip import GZipMiddleware
 
 from blogscraper.tasks import scrape_blogs
+from blogscraper.types import URLDict
 
 # - from blogscraper.tasks import (
 # -     delete_unneeded_docs,
@@ -29,7 +32,13 @@ from blogscraper.tasks import scrape_blogs
 # -     scrape_blogs,
 # - )
 # - from blogscraper.ui import confirm_action, console, display_welcome, warnstr
-from blogscraper.utils.mongodb_helpers import close_db, init_db, the_db
+from blogscraper.utils.mongodb_helpers import (
+    close_db,
+    filter_posts,
+    init_db,
+    post_sources,
+    the_db,
+)
 
 # - from blogscraper.utils.storage import load_stored_urls
 
@@ -121,9 +130,58 @@ async def _run_scrape(task_id: str) -> None:
 
 
 @app.get("/scrape/status/{task_id}", tags=["API"])
-async def get_scrape_status(task_id: str) -> dict[str, str]:
+async def scrape_status(task_id: str) -> dict[str, str]:
     """Returns the status of a scraping task."""
     return {"task_id": task_id, "status": scrape_tasks.get(task_id, "not found")}
+
+
+@app.get("/sources", response_model=list[str])
+async def sources(
+    roots_only: bool = Query(False, description="Return only root sources")
+) -> list[str]:
+    """
+    Fetch a unique list of all sources in the collection.
+
+    Parameters:
+    - roots_only: If True, returns only root sources from `SCRAPERS`.
+                  Otherwise, fetches distinct sources from the database.
+
+    Returns:
+    - list of unique source names.
+    """
+    return post_sources(roots_only=roots_only)
+
+
+class FilterRangeQuery(BaseModel):
+    """Query parameters for fetching documents within a date range."""
+
+    start_date: date = Field(..., description="Start date (YYYY-MM-DD)")
+    end_date: date = Field(..., description="End date (YYYY-MM-DD)")
+    source: str | None = Field(
+        None, description="Exact match for the source field (case-sensitive)"
+    )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "start_date": "2025-03-01",
+                "end_date": "2025-03-15",
+                "source": "TechCrunch",
+            }
+        }
+
+
+@app.get("/documents", response_model=list[URLDict])
+async def documents(query: FilterRangeQuery = Depends()) -> list[URLDict]:
+    """Fetch documents created within the given date range."""
+    if query.start_date > query.end_date:
+        raise HTTPException(
+            status_code=400, detail="start_date must be before end_date."
+        )
+
+    start_dt = datetime.combine(query.start_date, datetime.min.time())  # 00:00:00
+    end_dt = datetime.combine(query.end_date, datetime.max.time())  # 23:59:59
+    return filter_posts(start_dt=start_dt, end_dt=end_dt, source=query.source)
 
 
 # - def main() -> None:
