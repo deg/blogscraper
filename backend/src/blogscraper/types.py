@@ -19,15 +19,18 @@ class URLDict:
 
     Attributes:
         url (str): The URL of the blog post.
+        clean_url (str): The URL of the blog post with tracking params, etc., removed
         source (str): The name of the blog or website.
         creation_date (datetime): The date the post was published.
         harvest_timestamp (datetime): The timestamp when the URL was scraped.
     """
 
     url: str
+    clean_url: str
     source: str
     creation_date: datetime
     harvest_timestamp: datetime
+    formatted_content: str
 
 
 @dataclass

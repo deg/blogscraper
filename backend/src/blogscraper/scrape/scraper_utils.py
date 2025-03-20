@@ -11,15 +11,14 @@ Usage:
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Callable
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urlencode, urljoin, urlparse, urlunparse
 
 from bs4 import BeautifulSoup, Tag
 from bson import ObjectId
 from degel_python_utils import setup_logger
-from rich.progress import BarColumn, Progress, TimeRemainingColumn
 
+from blogscraper.content_viewer import show_page_content
 from blogscraper.types import Scraper, URLDict
-from blogscraper.ui import errstr
 from blogscraper.utils.mongodb_helpers import add_post, get_documents
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
@@ -109,9 +108,11 @@ def extend_posts_with_references(
         for ref in references:
             ref_dict = URLDict(
                 url=ref,
+                clean_url=clean_url(ref),
                 harvest_timestamp=datetime.now(),
                 source=page.url,
                 creation_date=page.creation_date,
+                formatted_content=show_page_content(ref, to_string=True),
             )
             if id := add_post(ref_dict):
                 ids.append(id)
@@ -308,9 +309,11 @@ def fetch_and_parse_urls(
             continue
         url_dict = URLDict(
             url=absolute_url,
-            harvest_timestamp=datetime.now(),  # datestring(datetime.now()),
+            clean_url=clean_url(absolute_url),
+            harvest_timestamp=datetime.now(),
             source=source,
-            creation_date=creation_date,  # creation_date_str,
+            creation_date=creation_date,
+            formatted_content=show_page_content(absolute_url, to_string=True),
         )
 
         if id := add_post(url_dict):
@@ -338,27 +341,48 @@ def fetch_multiple_pages(
     """
     results = []
 
-    with Progress(
-        "[progress.description]{task.description}",
-        BarColumn(),
-        "[progress.percentage]{task.percentage:>3.0f}%",
-        TimeRemainingColumn(),
-    ) as progress:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_url = {executor.submit(scraper_function, url): url for url in urls}
 
-        task = progress.add_task("Fetching pages...", total=len(urls))
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
 
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_url = {
-                executor.submit(scraper_function, url): url for url in urls
-            }
-
-            for future in as_completed(future_to_url):
-                url = future_to_url[future]
-                progress.advance(task)
-
-                try:
-                    results.extend(future.result())
-                except Exception as e:
-                    progress.console.print(errstr(f"Error fetching {url}: {e}"))
+            try:
+                results.extend(future.result())
+            except Exception as e:
+                logger.error(f"Error fetching {url}: {e}")
 
     return results
+
+
+def clean_url(url: str) -> str:
+    """
+    Remove known tracking parameters (e.g., UTM parameters) from a URL.
+
+    Parameters:
+    - url (str): The original URL.
+
+    Returns:
+    - str: The cleaned URL without tracking parameters.
+    """
+    tracking_params = {
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_term",
+        "utm_content",
+        "gclid",
+        "fbclid",
+    }
+
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+
+    filtered_params = {
+        k: v for k, v in query_params.items() if k not in tracking_params
+    }
+
+    cleaned_query = urlencode(filtered_params, doseq=True)
+    cleaned_url = urlunparse(parsed_url._replace(query=cleaned_query))
+
+    return cleaned_url

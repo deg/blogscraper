@@ -59,6 +59,7 @@ def init_db() -> None:
 
     posts_coll = db["blog_posts"]
     posts_coll.create_index("url", unique=True)
+    posts_coll.create_index("clean_url", unique=True)
 
     _db = db
     _collections = {"posts": posts_coll}
