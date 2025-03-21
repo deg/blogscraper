@@ -1,28 +1,24 @@
 import re
 from datetime import datetime
 
-from blogscraper.content_viewer import show_page_content
+from degel_python_utils import setup_logger
+
 from blogscraper.types import URLDict
-from blogscraper.ui import (
-    console,
-    infostr,
-    input_text,
-    minor_infostr,
-    select_urls,
-    urlstr,
-    warnstr,
-)
+from blogscraper.ui import urlstr
 from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
 from blogscraper.utils.time_utils import datestring
 
+logger = setup_logger(__name__)
+# XXpXXylint: disable=logging-format-interpolation
+
 
 def generate_doc(
-    ranged_urls: list[URLDict], start_day: datetime, end_day: datetime, format: str
-) -> None:
+    posts: list[URLDict], start_day: datetime, end_day: datetime, format: str
+) -> str:
     """Generates a document (Google Doc or Markdown) with selected blog content.
 
     Args:
-        ranged_urls (list[URLDict]): List of URLs with metadata.
+        posts (list[URLDict]): List of URLs with metadata.
         start_day (datetime): Start date for the document title.
         end_day (datetime): End date for the document title.
         format (str): Output format, either "Google Doc" or "Markdown".
@@ -30,11 +26,7 @@ def generate_doc(
     Raises:
         ValueError: If an unsupported format is specified.
     """
-    filter_str = input_text(
-        message="Blank for no filtering, or choose only posts containing: ",
-        default="",
-    )
-    selected_urls = select_urls(ranged_urls)
+    filter_str = None
 
     human_start = datestring(start_day, human=True)
     human_end = datestring(end_day, human=True)
@@ -50,20 +42,21 @@ def generate_doc(
 
     max_length = 1_000_000 if format == "Google Doc" else 3_000_000
     document_content = prepare_google_doc_content(
-        header_text, selected_urls, max_length=max_length, filter_str=filter_str
+        header_text, posts, max_length=max_length, filter_str=filter_str
     )
 
     if format == "Google Doc":
         doc_id, doc_url = create_google_doc(title)
         write_to_google_doc(doc_id, document_content)
-        console.print(infostr(f"Created Google doc: {urlstr(doc_url)}"))
+        logger.info(f"Created Google doc: {urlstr(doc_url)}")
+        return doc_url
 
     elif format == "Markdown":
-        markdown_filename = f"{title.replace(' ', '_')}.md"
-        with open(markdown_filename, "w", encoding="utf-8") as md_file:
-            md_file.write(f"# {title}\n\n{document_content}")
-
-        console.print(infostr(f"Created Markdown file: {markdown_filename}"))
+        # - markdown_filename = f"{title.replace(' ', '_')}.md"
+        # - with open(markdown_filename, "w", encoding="utf-8") as md_file:
+        # -     md_file.write(f"# {title}\n\n{document_content}")
+        # - logger.info(f"Created Markdown file: {markdown_filename}")
+        return document_content
 
     else:
         raise ValueError(f"Unsupported document format: '{format}'")
@@ -71,7 +64,7 @@ def generate_doc(
 
 def prepare_google_doc_content(
     header_text: str,
-    selected_urls: list[str],
+    posts: list[URLDict],
     max_length: int = 999_999_999,
     filter_str: str | None = None,
 ) -> str:
@@ -80,24 +73,21 @@ def prepare_google_doc_content(
     kept_urls = []
     body_text = ""
 
-    for i, url in enumerate(selected_urls, start=1):
-        contents = show_page_content(url, to_string=True)
-        if filter_str and match_filter(contents, filter_str):
+    for i, post in enumerate(posts, start=1):
+        url = post.url
+        contents = post.formatted_content
+        if not filter_str or match_filter(contents, filter_str):
             kept_urls.append(url)
             body_text += contents
-            console.print(
-                infostr(f"Adding {i}/{len(selected_urls)} (len={len(contents)}): {url}")
-            )
+            logger.info(f"Adding {i}/{len(posts)} (len={len(contents)}): {url}")
         else:
-            console.print(minor_infostr(f"Skipping {i}/{len(selected_urls)}: {url}"))
+            logger.minor(f"Skipping {i}/{len(posts)}: {url}")
 
         if (len_so_far := len(body_text)) > max_length:
-            console.print(
-                warnstr(
-                    f"This document may be too big ({len_so_far}).\n"
-                    "Not appendng more documents.\n"
-                    "Table of contents will be inconsistent."
-                )
+            logger.warning(
+                f"This document may be too big ({len_so_far}).\n"
+                "Not appendng more documents.\n"
+                "Table of contents will be inconsistent."
             )
             break
 
@@ -105,7 +95,6 @@ def prepare_google_doc_content(
     text += "<!-- TABLE OF CONTENTS -->\n\n"
     text += "\n".join(kept_urls) + "\n\n"
     text += body_text
-
     return text
 
 

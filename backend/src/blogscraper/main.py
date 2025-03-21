@@ -16,21 +16,10 @@ from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
 from fastapi import Depends, FastAPI, HTTPException, Query
-from pydantic import BaseModel, Field
 from starlette.middleware.gzip import GZipMiddleware
 
-from blogscraper.tasks import scrape_blogs
-from blogscraper.types import URLDict
+from blogscraper.tasks import generate_doc, scrape_blogs
 
-# - from blogscraper.tasks import (
-# -     delete_unneeded_docs,
-# -     display_blogs,
-# -     filter_urls_by_date_range,
-# -     generate_doc,
-# -     generate_llm_prompt,
-# -     list_urls,
-# -     scrape_blogs,
-# - )
 # - from blogscraper.ui import confirm_action, console, display_welcome, warnstr
 from blogscraper.utils.mongodb_helpers import (
     close_db,
@@ -39,6 +28,14 @@ from blogscraper.utils.mongodb_helpers import (
     post_sources,
     the_db,
 )
+
+# -     delete_unneeded_docs,
+# -     display_blogs,
+# -     filter_urls_by_date_range,
+# -     generate_llm_prompt,
+# -     list_urls,
+# -     scrape_blogs,
+
 
 # - from blogscraper.utils.storage import load_stored_urls
 
@@ -154,36 +151,52 @@ async def sources(
     return post_sources(roots_only=roots_only)
 
 
-class FilterRangeQuery(BaseModel):
+class FilterRangeQuery:
     """Query parameters for fetching documents within a date range."""
 
-    start_date: date = Field(..., description="Start date (YYYY-MM-DD)")
-    end_date: date = Field(..., description="End date (YYYY-MM-DD)")
-    source: str | None = Field(
-        None, description="Exact match for the source field (case-sensitive)"
-    )
+    def __init__(
+        self,
+        start_date: date = Query(..., description="Start date (inclusive)"),
+        end_date: date = Query(..., description="End date (inclusive)"),
+        source: str | None = Query(None, description="Filter by source"),
+    ):
+        if start_date > end_date:
+            raise HTTPException(
+                status_code=400, detail="start_date must be before end_date."
+            )
+        self.start_date = start_date
+        self.end_date = end_date
+        self.source = source
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "start_date": "2025-03-01",
-                "end_date": "2025-03-15",
-                "source": "TechCrunch",
-            }
-        }
+    @property
+    def start_dt(self) -> datetime:
+        return datetime.combine(self.start_date, datetime.min.time())
+
+    @property
+    def end_dt(self) -> datetime:
+        return datetime.combine(self.end_date, datetime.max.time())
 
 
-@app.get("/documents", response_model=list[URLDict])
-async def documents(query: FilterRangeQuery = Depends()) -> list[URLDict]:
-    """Fetch documents created within the given date range."""
-    if query.start_date > query.end_date:
-        raise HTTPException(
-            status_code=400, detail="start_date must be before end_date."
+@app.get("/list-documents", response_model=list[str])
+async def list_documents(query: FilterRangeQuery = Depends()) -> list[str]:
+    # [TODO] Really should project just "url" in filter_posts, but that breaks the
+    # from_dict return there.
+    return [
+        u.url
+        for u in filter_posts(
+            start_dt=query.start_dt,
+            end_dt=query.end_dt,
+            source=query.source,
         )
+    ]
 
-    start_dt = datetime.combine(query.start_date, datetime.min.time())  # 00:00:00
-    end_dt = datetime.combine(query.end_date, datetime.max.time())  # 23:59:59
-    return filter_posts(start_dt=start_dt, end_dt=end_dt, source=query.source)
+
+@app.get("/markdown-from-documents")
+async def markdown_from_documents(query: FilterRangeQuery = Depends()) -> str:
+    urls = filter_posts(
+        start_dt=query.start_dt, end_dt=query.end_dt, source=query.source
+    )
+    return generate_doc(urls, query.start_dt, query.end_dt, format="Markdown")
 
 
 # - def main() -> None:
