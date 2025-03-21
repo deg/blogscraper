@@ -125,8 +125,10 @@ async def _run_scrape(task_id: str) -> None:
             status_callback=status_callback,
         )
         scrape_tasks[task_id] = "completed"
+        logger.major("Scrape completed")
     except Exception as e:
         scrape_tasks[task_id] = f"failed: {str(e)}"
+        logger.warning("Scrape failed")
 
 
 @app.get("/scrape/status/{task_id}", tags=["API"])
