@@ -13,7 +13,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     image: blogscraper:latest
-    container_name: blogscraper
+    container_name: blo_backend
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
