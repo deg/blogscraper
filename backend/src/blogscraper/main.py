@@ -106,11 +106,7 @@ async def _run_scrape(task_id: str) -> None:
         scrape_tasks[task_id] = f"running: {status}"
 
     try:
-        await asyncio.to_thread(
-            scrape_blogs,
-            do_all=True,
-            status_callback=status_callback,
-        )
+        await asyncio.to_thread(scrape_blogs, status_callback=status_callback)
         scrape_tasks[task_id] = "completed"
         logger.major("Scrape completed")
     except Exception as e:

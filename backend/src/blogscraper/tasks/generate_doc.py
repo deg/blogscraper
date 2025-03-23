@@ -1,7 +1,6 @@
 from degel_python_utils import setup_logger
 
 from blogscraper.types import FilterRangeQuery, URLDict
-from blogscraper.ui import urlstr
 from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
 from blogscraper.utils.mongodb_helpers import filter_posts
 from blogscraper.utils.time_utils import datestring
@@ -44,7 +43,7 @@ def generate_doc(query: FilterRangeQuery, format: str) -> str:
     if format == "Google Doc":
         doc_id, doc_url = create_google_doc(title)
         write_to_google_doc(doc_id, document_content)
-        logger.info(f"Created Google doc: {urlstr(doc_url)}")
+        logger.info(f"Created Google doc: {doc_url}")
         return doc_url
 
     elif format == "Markdown":

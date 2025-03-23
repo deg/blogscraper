@@ -135,7 +135,7 @@ def list_service_account_docs() -> list[GDoc]:
         files = results.get("files", [])
 
         if not files:
-            print("No documents found.")
+            logger.minor("No documents found.")
             return []
 
         docs = [
@@ -153,7 +153,7 @@ def list_service_account_docs() -> list[GDoc]:
         return docs
 
     except Exception as e:
-        print(f"❌ Error retrieving documents: {e}")
+        logger.warning(f"❌ Error retrieving documents: {e}")
         return []
 
 

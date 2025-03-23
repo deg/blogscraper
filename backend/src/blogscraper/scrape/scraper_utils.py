@@ -197,7 +197,7 @@ def fetch_all_urls(
         list[URLDict]: List of extracted URLs from main and archive pages.
     """
 
-    print(f"Fetching and parsing URLs from {base_url}")
+    logger.major(f"Fetching and parsing URLs from {base_url}")
 
     # Collect all pages (main + archives)
     pages_to_fetch = [base_url]

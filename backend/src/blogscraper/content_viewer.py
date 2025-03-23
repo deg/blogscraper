@@ -4,8 +4,8 @@ Uses Trafilatura to extract main content from web pages and formats it
 for display in the terminal.
 
 Usage:
-    This module provides functions to retrieve and present content from
-    specified URLs, either returning it as a string or printing it directly.
+    This module provides functions to retrieve content from specified
+    URLs and format it readably.
 """
 
 import requests
