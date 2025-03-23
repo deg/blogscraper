@@ -1,0 +1,704 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Blog Scraper",
+    "description": "Summarize interesting recent AI blog posts",
+    "version": "1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "API"
+        ],
+        "summary": "Health",
+        "description": "Get server status",
+        "operationId": "health__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scrape": {
+      "post": {
+        "tags": [
+          "Scrape"
+        ],
+        "summary": "Start Scrape",
+        "description": "Starts scraping in an async background task.",
+        "operationId": "start_scrape_scrape_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Start Scrape Scrape Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scrape/status/{task_id}": {
+      "get": {
+        "tags": [
+          "Scrape"
+        ],
+        "summary": "Scrape Status",
+        "description": "Returns the status of a scraping task.",
+        "operationId": "scrape_status_scrape_status__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Scrape Status Scrape Status  Task Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sources": {
+      "get": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "Sources",
+        "description": "Fetch a unique list of all sources in the collection.\n\nParameters:\n- roots_only: If True, returns only root sources from `SCRAPERS`.\n              Otherwise, fetches distinct sources from the database.\n\nReturns:\n- list of unique source names.",
+        "operationId": "sources_sources_get",
+        "parameters": [
+          {
+            "name": "roots_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Return only root sources",
+              "default": false,
+              "title": "Roots Only"
+            },
+            "description": "Return only root sources"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Sources Sources Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/list-google-docs": {
+      "get": {
+        "tags": [
+          "Google"
+        ],
+        "summary": "List Google Docs",
+        "operationId": "list_google_docs_list_google_docs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GDoc"
+                  },
+                  "type": "array",
+                  "title": "Response List Google Docs List Google Docs Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/delete-google-doc": {
+      "post": {
+        "tags": [
+          "Google"
+        ],
+        "summary": "Delete Google Doc",
+        "operationId": "delete_google_doc_delete_google_doc_post",
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "title": "Response Delete Google Doc Delete Google Doc Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/list-documents": {
+      "get": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "List Documents",
+        "operationId": "list_documents_list_documents_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Start date (inclusive)",
+              "title": "Start Date"
+            },
+            "description": "Start date (inclusive)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "End date (inclusive)",
+              "title": "End Date"
+            },
+            "description": "End date (inclusive)"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by source",
+              "title": "Source"
+            },
+            "description": "Filter by source"
+          },
+          {
+            "name": "match_string",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Regex to match in post content",
+              "title": "Match String"
+            },
+            "description": "Regex to match in post content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response List Documents List Documents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/llm-prompt-from-documents": {
+      "get": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "Llm Prompt From Documents",
+        "operationId": "llm_prompt_from_documents_llm_prompt_from_documents_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Start date (inclusive)",
+              "title": "Start Date"
+            },
+            "description": "Start date (inclusive)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "End date (inclusive)",
+              "title": "End Date"
+            },
+            "description": "End date (inclusive)"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by source",
+              "title": "Source"
+            },
+            "description": "Filter by source"
+          },
+          {
+            "name": "match_string",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Regex to match in post content",
+              "title": "Match String"
+            },
+            "description": "Regex to match in post content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Llm Prompt From Documents Llm Prompt From Documents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/markdown-from-documents": {
+      "get": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "Markdown From Documents",
+        "operationId": "markdown_from_documents_markdown_from_documents_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Start date (inclusive)",
+              "title": "Start Date"
+            },
+            "description": "Start date (inclusive)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "End date (inclusive)",
+              "title": "End Date"
+            },
+            "description": "End date (inclusive)"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by source",
+              "title": "Source"
+            },
+            "description": "Filter by source"
+          },
+          {
+            "name": "match_string",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Regex to match in post content",
+              "title": "Match String"
+            },
+            "description": "Regex to match in post content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Markdown From Documents Markdown From Documents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/google-doc-from-documents": {
+      "get": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "Google Doc From Documents",
+        "operationId": "google_doc_from_documents_google_doc_from_documents_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Start date (inclusive)",
+              "title": "Start Date"
+            },
+            "description": "Start date (inclusive)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "End date (inclusive)",
+              "title": "End Date"
+            },
+            "description": "End date (inclusive)"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by source",
+              "title": "Source"
+            },
+            "description": "Filter by source"
+          },
+          {
+            "name": "match_string",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Regex to match in post content",
+              "title": "Match String"
+            },
+            "description": "Regex to match in post content"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Google Doc From Documents Google Doc From Documents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GDoc": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "createdTime": {
+            "type": "string",
+            "title": "Createdtime"
+          },
+          "modifiedTime": {
+            "type": "string",
+            "title": "Modifiedtime"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "createdTime",
+          "modifiedTime",
+          "url"
+        ],
+        "title": "GDoc"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "API",
+      "description": "Catch-all for now"
+    }
+  ]
+}

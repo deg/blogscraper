@@ -4,6 +4,12 @@ install:
 	@echo "🚧 No install yet for frontend"
 
 
+# Generate API client from OpenAPI spec
+.PHONY: gen-api
+gen-api:
+	yarn orval --config openapi/orval.config.ts
+
+
 # Lint all files (fails on errors)
 .PHONY: lint
 lint:
