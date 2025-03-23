@@ -1,35 +1,30 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Layout, Menu } from 'antd'
+import { BrowserRouter, Route, Routes, Link } from 'react-router-dom'
+import ScrapePage from './pages/ScrapePage'
+import DocsPage from './pages/DocsPage'
+import ExportPage from './pages/ExportPage'
 
-function App() {
-  const [count, setCount] = useState(0)
+const { Header, Content } = Layout
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+const App = () => (
+  <BrowserRouter>
+    <Layout style={{ minHeight: '100vh' }}>
+      <Header>
+        <Menu theme="dark" mode="horizontal">
+          <Menu.Item key="scrape"><Link to="/">Scrape</Link></Menu.Item>
+          <Menu.Item key="docs"><Link to="/docs">Docs</Link></Menu.Item>
+          <Menu.Item key="export"><Link to="/export">Export</Link></Menu.Item>
+        </Menu>
+      </Header>
+      <Content style={{ padding: '24px' }}>
+        <Routes>
+          <Route path="/" element={<ScrapePage />} />
+          <Route path="/docs" element={<DocsPage />} />
+          <Route path="/export" element={<ExportPage />} />
+        </Routes>
+      </Content>
+    </Layout>
+  </BrowserRouter>
+)
 
 export default App
