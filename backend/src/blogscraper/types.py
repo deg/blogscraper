@@ -7,10 +7,11 @@ Usage:
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Callable
 
 from bson import ObjectId
+from fastapi import HTTPException, Query
 
 
 @dataclass
@@ -58,3 +59,33 @@ class Scraper:
     name: str
     base_url: str
     function: Callable[["Scraper", Callable[[str], None] | None], list[ObjectId]]
+
+
+class FilterRangeQuery:
+    """Query parameters for filtering document selection."""
+
+    def __init__(
+        self,
+        start_date: date = Query(..., description="Start date (inclusive)"),
+        end_date: date = Query(..., description="End date (inclusive)"),
+        source: str | None = Query(None, description="Filter by source"),
+        match_string: str | None = Query(
+            None, description="Regex to match in post content"
+        ),
+    ):
+        if start_date > end_date:
+            raise HTTPException(
+                status_code=400, detail="start_date must be before end_date."
+            )
+        self.start_date = start_date
+        self.end_date = end_date
+        self.source = source
+        self.match_string = match_string
+
+    @property
+    def start_dt(self) -> datetime:
+        return datetime.combine(self.start_date, datetime.min.time())
+
+    @property
+    def end_dt(self) -> datetime:
+        return datetime.combine(self.end_date, datetime.max.time())

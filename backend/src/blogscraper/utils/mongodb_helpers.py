@@ -1,5 +1,7 @@
 # - from datetime import datetime
 
+
+import re
 from dataclasses import asdict
 from datetime import datetime
 from typing import Any, cast
@@ -116,6 +118,7 @@ def filter_posts(
     start_dt: datetime | None = None,
     end_dt: datetime | None = None,
     source: str | None = None,
+    match_string: str | None = None,
 ) -> list[URLDict]:
     """
     Retrieve posts from MongoDB based on optional filters.
@@ -124,6 +127,7 @@ def filter_posts(
     - start_dt: Earliest `creation_date` (inclusive).
     - end_dt: Latest `creation_date` (inclusive).
     - source: Exact match for the `source` field (case-sensitive).
+    - match_string: Regex to match in `formatted_content` field
 
     Returns:
     - list[dict]: A list of matching posts, excluding `_id`.
@@ -135,8 +139,16 @@ def filter_posts(
         query.setdefault("creation_date", {})["$gte"] = start_dt
     if end_dt:
         query.setdefault("creation_date", {})["$lte"] = end_dt
+
     if source:
         query["source"] = source  # Exact case-sensitive match
+
+    if match_string:
+        try:
+            re.compile(match_string)
+        except re.error:
+            raise ValueError("Invalid regex in match_string")
+        query["formatted_content"] = {"$regex": match_string}
 
     raw_documents = list(posts_coll.find(query, {"_id": 0}))
     return [from_dict(URLDict, doc) for doc in raw_documents]

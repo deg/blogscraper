@@ -11,14 +11,14 @@ Usage:
 
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import date, datetime
 from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Query
 from starlette.middleware.gzip import GZipMiddleware
 
 from blogscraper.tasks import generate_doc, scrape_blogs
+from blogscraper.types import FilterRangeQuery
 from blogscraper.utils.mongodb_helpers import (
     close_db,
     filter_posts,
@@ -138,32 +138,6 @@ async def sources(
     return post_sources(roots_only=roots_only)
 
 
-class FilterRangeQuery:
-    """Query parameters for fetching documents within a date range."""
-
-    def __init__(
-        self,
-        start_date: date = Query(..., description="Start date (inclusive)"),
-        end_date: date = Query(..., description="End date (inclusive)"),
-        source: str | None = Query(None, description="Filter by source"),
-    ):
-        if start_date > end_date:
-            raise HTTPException(
-                status_code=400, detail="start_date must be before end_date."
-            )
-        self.start_date = start_date
-        self.end_date = end_date
-        self.source = source
-
-    @property
-    def start_dt(self) -> datetime:
-        return datetime.combine(self.start_date, datetime.min.time())
-
-    @property
-    def end_dt(self) -> datetime:
-        return datetime.combine(self.end_date, datetime.max.time())
-
-
 @app.get("/list-documents", response_model=list[str])
 async def list_documents(query: FilterRangeQuery = Depends()) -> list[str]:
     # [TODO] Really should project just "url" in filter_posts, but that breaks the
@@ -174,24 +148,19 @@ async def list_documents(query: FilterRangeQuery = Depends()) -> list[str]:
             start_dt=query.start_dt,
             end_dt=query.end_dt,
             source=query.source,
+            match_string=query.match_string,
         )
     ]
 
 
 @app.get("/markdown-from-documents")
 async def markdown_from_documents(query: FilterRangeQuery = Depends()) -> str:
-    urls = filter_posts(
-        start_dt=query.start_dt, end_dt=query.end_dt, source=query.source
-    )
-    return generate_doc(urls, query.start_dt, query.end_dt, format="Markdown")
+    return generate_doc(query, format="Markdown")
 
 
 @app.get("/google-doc-from-documents")
 async def google_doc_from_documents(query: FilterRangeQuery = Depends()) -> str:
-    urls = filter_posts(
-        start_dt=query.start_dt, end_dt=query.end_dt, source=query.source
-    )
-    return generate_doc(urls, query.start_dt, query.end_dt, format="Google Doc")
+    return generate_doc(query, format="Google Doc")
 
 
 # - def main() -> None:

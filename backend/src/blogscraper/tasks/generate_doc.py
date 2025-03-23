@@ -1,20 +1,17 @@
 import re
-from datetime import datetime
 
 from degel_python_utils import setup_logger
 
-from blogscraper.types import URLDict
+from blogscraper.types import FilterRangeQuery, URLDict
 from blogscraper.ui import urlstr
 from blogscraper.utils.google_interface import create_google_doc, write_to_google_doc
+from blogscraper.utils.mongodb_helpers import filter_posts
 from blogscraper.utils.time_utils import datestring
 
 logger = setup_logger(__name__)
-# XXpXXylint: disable=logging-format-interpolation
 
 
-def generate_doc(
-    posts: list[URLDict], start_day: datetime, end_day: datetime, format: str
-) -> str:
+def generate_doc(query: FilterRangeQuery, format: str) -> str:
     """Generates a document (Google Doc or Markdown) with selected blog content.
 
     Args:
@@ -26,11 +23,16 @@ def generate_doc(
     Raises:
         ValueError: If an unsupported format is specified.
     """
-    filter_str = None
+    posts = filter_posts(
+        start_dt=query.start_dt,
+        end_dt=query.end_dt,
+        source=query.source,
+        match_string=query.match_string,
+    )
 
-    human_start = datestring(start_day, human=True)
-    human_end = datestring(end_day, human=True)
-    filter_title = f" filtered by '{filter_str}'" if filter_str else ""
+    human_start = datestring(query.start_dt, human=True)
+    human_end = datestring(query.end_dt, human=True)
+    filter_title = f" filtered by '{query.match_string}'" if query.match_string else ""
     title = f"{human_start} - {human_end} blog scrape{filter_title}"
 
     header_text = (
@@ -41,9 +43,7 @@ def generate_doc(
     )
 
     max_length = 1_000_000 if format == "Google Doc" else 3_000_000
-    document_content = prepare_google_doc_content(
-        header_text, posts, max_length=max_length, filter_str=filter_str
-    )
+    document_content = extract_docs_contents(header_text, posts, max_length=max_length)
 
     if format == "Google Doc":
         doc_id, doc_url = create_google_doc(title)
@@ -58,11 +58,10 @@ def generate_doc(
         raise ValueError(f"Unsupported document format: '{format}'")
 
 
-def prepare_google_doc_content(
+def extract_docs_contents(
     header_text: str,
     posts: list[URLDict],
     max_length: int = 999_999_999,
-    filter_str: str | None = None,
 ) -> str:
     """Prepares the content for the Google Document."""
 
@@ -72,18 +71,14 @@ def prepare_google_doc_content(
     for i, post in enumerate(posts, start=1):
         url = post.url
         contents = post.formatted_content
-        if not filter_str or match_filter(contents, filter_str):
-            kept_urls.append(url)
-            body_text += contents
-            logger.info(f"Adding {i}/{len(posts)} (len={len(contents)}): {url}")
-        else:
-            logger.minor(f"Skipping {i}/{len(posts)}: {url}")
+        kept_urls.append(url)
+        body_text += contents
+        logger.minor(f"Adding {i}/{len(posts)} (len={len(contents)}): {url}")
 
         if (len_so_far := len(body_text)) > max_length:
             logger.warning(
                 f"This document may be too big ({len_so_far}).\n"
-                "Not appendng more documents.\n"
-                "Table of contents will be inconsistent."
+                "Not appendng more documents."
             )
             break
 
