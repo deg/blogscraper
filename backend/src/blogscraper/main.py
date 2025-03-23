@@ -18,7 +18,11 @@ from fastapi import Depends, FastAPI, Query
 from starlette.middleware.gzip import GZipMiddleware
 
 from blogscraper.tasks import generate_doc, scrape_blogs
-from blogscraper.types import FilterRangeQuery
+from blogscraper.types import FilterRangeQuery, GDoc
+from blogscraper.utils.google_interface import (
+    delete_service_account_doc,
+    list_service_account_docs,
+)
 from blogscraper.utils.mongodb_helpers import (
     close_db,
     filter_posts,
@@ -32,7 +36,6 @@ APP_DESCRIPTION = "Summarize interesting recent AI blog posts"
 
 
 logger = setup_logger(__name__)
-# pylint: disable=logging-fstring-interpolation
 
 
 @asynccontextmanager
@@ -81,7 +84,7 @@ def health() -> dict[str, str]:
 scrape_tasks: dict[str, str] = {}
 
 
-@app.post("/scrape", tags=["API"])
+@app.post("/scrape", tags=["Scrape"])
 async def start_scrape(
     # posts_coll: PostCollection = Depends(get_posts_collection),
 ) -> dict[str, str]:
@@ -115,13 +118,13 @@ async def _run_scrape(task_id: str) -> None:
         logger.warning("Scrape failed")
 
 
-@app.get("/scrape/status/{task_id}", tags=["API"])
+@app.get("/scrape/status/{task_id}", tags=["Scrape"])
 async def scrape_status(task_id: str) -> dict[str, str]:
     """Returns the status of a scraping task."""
     return {"task_id": task_id, "status": scrape_tasks.get(task_id, "not found")}
 
 
-@app.get("/sources", response_model=list[str])
+@app.get("/sources", response_model=list[str], tags=["Query"])
 async def sources(
     roots_only: bool = Query(False, description="Return only root sources")
 ) -> list[str]:
@@ -138,7 +141,17 @@ async def sources(
     return post_sources(roots_only=roots_only)
 
 
-@app.get("/list-documents", response_model=list[str])
+@app.get("/list-google-docs", response_model=list[GDoc], tags=["Google"])
+async def list_google_docs() -> list[GDoc]:
+    return list_service_account_docs()
+
+
+@app.post("/delete-google-doc", response_model=bool, tags=["Google"])
+async def delete_google_doc(doc_id: str, name: str) -> bool:
+    return delete_service_account_doc(doc_id, name)
+
+
+@app.get("/list-documents", response_model=list[str], tags=["Query"])
 async def list_documents(query: FilterRangeQuery = Depends()) -> list[str]:
     # [TODO] Really should project just "url" in filter_posts, but that breaks the
     # from_dict return there.
@@ -153,29 +166,16 @@ async def list_documents(query: FilterRangeQuery = Depends()) -> list[str]:
     ]
 
 
-@app.get("/markdown-from-documents")
+@app.get("/markdown-from-documents", tags=["Query"])
 async def markdown_from_documents(query: FilterRangeQuery = Depends()) -> str:
     return generate_doc(query, format="Markdown")
 
 
-@app.get("/google-doc-from-documents")
+@app.get("/google-doc-from-documents", tags=["Query"])
 async def google_doc_from_documents(query: FilterRangeQuery = Depends()) -> str:
     return generate_doc(query, format="Google Doc")
 
 
-# - def main() -> None:
-# -     if confirm_action("Display contents of selected blogs?"):
-# -         display_blogs(ranged_urls)
-# -
-# -     if confirm_action("Display a list of the URLs?"):
-# -         list_urls(ranged_urls)
-# -
-# -     if confirm_action("Generate a consolidated Google Doc?"):
-# -         generate_doc(ranged_urls, start_day, end_day, format="Google Doc")
-# -
-# -     if confirm_action("Generate a consolidated Markdown file?"):
-# -         generate_doc(ranged_urls, start_day, end_day, format="Markdown")
-# -
 # -     if confirm_action("Generate an ad-hoc LLM prompt?"):
 # -         generate_llm_prompt(ranged_urls)
 # -

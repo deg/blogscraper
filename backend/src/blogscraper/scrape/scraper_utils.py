@@ -17,14 +17,13 @@ from bs4 import BeautifulSoup, Tag
 from bson import ObjectId
 from degel_python_utils import setup_logger
 
-from blogscraper.content_viewer import show_page_content
+from blogscraper.content_viewer import formatted_page_content
 from blogscraper.types import Scraper, URLDict
 from blogscraper.utils.mongodb_helpers import add_post, get_documents
 from blogscraper.utils.time_utils import datestring
 from blogscraper.utils.url_utils import get_html, normalize_url
 
 logger = setup_logger(__name__)
-# pylint: disable=logging-format-interpolation
 
 
 def standard_scraper(
@@ -112,7 +111,7 @@ def extend_posts_with_references(
                 harvest_timestamp=datetime.now(),
                 source=page.url,
                 creation_date=page.creation_date,
-                formatted_content=show_page_content(ref, to_string=True),
+                formatted_content=formatted_page_content(ref),
             )
             if id := add_post(ref_dict):
                 ids.append(id)
@@ -313,7 +312,7 @@ def fetch_and_parse_urls(
             harvest_timestamp=datetime.now(),
             source=source,
             creation_date=creation_date,
-            formatted_content=show_page_content(absolute_url, to_string=True),
+            formatted_content=formatted_page_content(absolute_url),
         )
 
         if id := add_post(url_dict):

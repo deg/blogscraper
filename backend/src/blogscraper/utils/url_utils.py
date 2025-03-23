@@ -12,8 +12,9 @@ from typing import Final
 from urllib.parse import urljoin
 
 import requests
+from degel_python_utils import setup_logger
 
-from blogscraper.ui import console, errstr
+logger = setup_logger(__name__)
 
 
 def normalize_url(base_url: str, link: str) -> str:
@@ -41,9 +42,9 @@ def get_html(url: str) -> str | None:
     try:
         return fetch_html(url)
     except requests.HTTPError as http_err:
-        console.print(errstr(f"HTTP error while fetching {url}: {http_err}"))
+        logger.warning(f"HTTP error while fetching {url}: {http_err}")
     except requests.RequestException as req_err:
-        console.print(errstr(f"Request error while fetching {url}: {req_err}"))
+        logger.warning(f"Request error while fetching {url}: {req_err}")
     return None
 
 

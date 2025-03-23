@@ -10,28 +10,23 @@ Usage:
 
 import requests
 import trafilatura
+from degel_python_utils import setup_logger
 
-from blogscraper.ui import console, errstr
+logger = setup_logger(__name__)
 
 
-def show_page_content(url: str, to_string: bool = False) -> str:
-    """Fetches, formats, and displays webpage content.
+def formatted_page_content(url: str) -> str:
+    """Returns formmated content of a web page.
 
     Args:
         url (str): The URL of the webpage.
-        to_string (bool): If True, returns the output as a string instead of printing.
 
     Returns:
-        str: The formatted content if `to_string` is True, otherwise an empty string.
+        str: The formatted content.
     """
     content = fetch_page_content(url)
     formatted_content = format_page_content(url, content)
-
-    if to_string:
-        return formatted_content
-    else:
-        console.print(formatted_content)
-        return ""
+    return formatted_content
 
 
 def fetch_page_content(url: str) -> str | None:
@@ -67,7 +62,7 @@ def fetch_page_content(url: str) -> str | None:
         return main_content if main_content else None
 
     except requests.RequestException as e:
-        console.print(errstr(f"Failed to fetch {url}: {e}"))
+        logger.warning(f"Failed to fetch {url}: {e}")
         return None
 
 

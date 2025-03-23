@@ -1,5 +1,3 @@
-import re
-
 from degel_python_utils import setup_logger
 
 from blogscraper.types import FilterRangeQuery, URLDict
@@ -87,21 +85,3 @@ def extract_docs_contents(
     text += "\n".join(kept_urls) + "\n\n"
     text += body_text
     return text
-
-
-def match_filter(contents: str, filter_str: str) -> bool:
-    """
-    Tests if a multiline string `contents` contains the `filter_str`,
-    treating `filter_str` as a case-insensitive regex pattern if applicable.
-
-    Args:
-        contents (str): The text to search in.
-        filter_str (str): The user-provided string, which may be a regex pattern.
-
-    Returns:
-        bool: True if `contents` match the filter criteria.
-    """
-    try:
-        return bool(re.search(filter_str, contents, re.IGNORECASE | re.DOTALL))
-    except re.error:
-        return filter_str.lower() in contents.lower()

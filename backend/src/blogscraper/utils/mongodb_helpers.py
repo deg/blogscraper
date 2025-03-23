@@ -23,7 +23,6 @@ BlogDatabase = Database[dict[str, object]]
 BlogCollection = Collection[dict[str, object]]
 
 logger = setup_logger(__name__)
-# pylint: disable=logging-format-interpolation
 
 
 PostCollection = Collection[dict[str, object]]

@@ -6,7 +6,6 @@ from degel_python_utils import setup_logger
 from blogscraper.types import Scraper
 
 logger = setup_logger(__name__)
-# pylint: disable=logging-format-interpolation
 
 
 def run_scrapers(

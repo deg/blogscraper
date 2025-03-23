@@ -24,11 +24,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from degel_python_utils import setup_logger
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
 from blogscraper.types import GDoc
 from blogscraper.utils.sys_utils import find_project_root, get_env_secret
+
+logger = setup_logger(__name__)
 
 
 def get_service_account_path() -> Path:
@@ -166,8 +169,8 @@ def delete_service_account_doc(doc_id: str, name: str) -> bool:
     """
     try:
         DRIVE_SERVICE.files().delete(fileId=doc_id).execute()
-        print(f"✅ Successfully deleted '{name}'")
+        logger.info(f"✅ Successfully deleted '{name}'")
         return True
     except Exception as e:
-        print(f"❌ Failed to delete '{name}' (ID: {doc_id}): {e}")
+        logger.warning(f"❌ Failed to delete '{name}' (ID: {doc_id}): {e}")
         return False
