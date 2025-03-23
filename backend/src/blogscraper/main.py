@@ -186,6 +186,14 @@ async def markdown_from_documents(query: FilterRangeQuery = Depends()) -> str:
     return generate_doc(urls, query.start_dt, query.end_dt, format="Markdown")
 
 
+@app.get("/google-doc-from-documents")
+async def google_doc_from_documents(query: FilterRangeQuery = Depends()) -> str:
+    urls = filter_posts(
+        start_dt=query.start_dt, end_dt=query.end_dt, source=query.source
+    )
+    return generate_doc(urls, query.start_dt, query.end_dt, format="Google Doc")
+
+
 # - def main() -> None:
 # -     if confirm_action("Display contents of selected blogs?"):
 # -         display_blogs(ranged_urls)
