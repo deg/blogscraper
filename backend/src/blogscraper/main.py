@@ -17,7 +17,7 @@ from degel_python_utils import appEnv, setup_logger
 from fastapi import Depends, FastAPI, Query
 from starlette.middleware.gzip import GZipMiddleware
 
-from blogscraper.tasks import generate_doc, scrape_blogs
+from blogscraper.tasks import generate_doc, generate_llm_prompt, scrape_blogs
 from blogscraper.types import FilterRangeQuery, GDoc
 from blogscraper.utils.google_interface import (
     delete_service_account_doc,
@@ -166,6 +166,11 @@ async def list_documents(query: FilterRangeQuery = Depends()) -> list[str]:
     ]
 
 
+@app.get("/llm-prompt-from-documents", tags=["Query"])
+async def llm_prompt_from_documents(query: FilterRangeQuery = Depends()) -> str:
+    return generate_llm_prompt(query)
+
+
 @app.get("/markdown-from-documents", tags=["Query"])
 async def markdown_from_documents(query: FilterRangeQuery = Depends()) -> str:
     return generate_doc(query, format="Markdown")
@@ -176,12 +181,6 @@ async def google_doc_from_documents(query: FilterRangeQuery = Depends()) -> str:
     return generate_doc(query, format="Google Doc")
 
 
-# -     if confirm_action("Generate an ad-hoc LLM prompt?"):
-# -         generate_llm_prompt(ranged_urls)
-# -
-# -     delete_unneeded_docs()
-# -
-# -
 # - if __name__ == "__main__":  # pragma: no cover
 # -     try:
 # -         main()

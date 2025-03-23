@@ -1,18 +1,22 @@
 from urllib.parse import urlparse
 
-from blogscraper.prompt import PROMPT_PREFIX, PROMPT_SUFFIX
-from blogscraper.types import URLDict
-from blogscraper.ui import console, minor_infostr
+from blogscraper.prompt import promptPrefix, promptSuffix
+from blogscraper.types import FilterRangeQuery, URLDict
+from blogscraper.utils.mongodb_helpers import filter_posts
 
 
-def generate_llm_prompt(ranged_urls: list[URLDict]) -> None:
+def generate_llm_prompt(query: FilterRangeQuery) -> str:
     """Generates an LLM prompt based on the scraped data."""
-    console.print(
-        minor_infostr(
-            f"{PROMPT_PREFIX}\n\n"
-            + f"{generate_title_list(ranged_urls)}\n\n"
-            + f"{PROMPT_SUFFIX}"
-        )
+    posts = filter_posts(
+        start_dt=query.start_dt,
+        end_dt=query.end_dt,
+        source=query.source,
+        match_string=query.match_string,
+    )
+    return (
+        f"{promptPrefix(query)}\n\n"
+        f"{generate_title_list(posts)}\n\n"
+        f"{promptSuffix()}"
     )
 
 

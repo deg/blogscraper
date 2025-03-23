@@ -13,9 +13,7 @@ def generate_doc(query: FilterRangeQuery, format: str) -> str:
     """Generates a document (Google Doc or Markdown) with selected blog content.
 
     Args:
-        posts (list[URLDict]): List of URLs with metadata.
-        start_day (datetime): Start date for the document title.
-        end_day (datetime): End date for the document title.
+        query: FilterRangeQuery: Filter parameters for filter_posts
         format (str): Output format, either "Google Doc" or "Markdown".
 
     Raises:

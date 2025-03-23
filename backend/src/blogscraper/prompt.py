@@ -12,13 +12,27 @@ Usage:
 # flake8: noqa: E501
 
 
-PROMPT_PREFIX = """
+from blogscraper.types import FilterRangeQuery
+
+
+def promptPrefix(query: FilterRangeQuery) -> str:
+    regex_phrase = ""
+    if query.match_string:
+        regex_phrase = (
+            ", and containing text matching the "
+            f"regular expression <<<{query.match_string}>>>"
+        )
+    return f"""
 # Summarize Recent AI and Software Development Blog Posts
 
 Here are some very recent blog posts, focused on AI and software development. Each of these posts typically discusses multiple current stories in great detail.
+
+I chose these posts from the time period {query.start_date} through {query.end_date}{regex_phrase}.
 """
 
-PROMPT_SUFFIX = """
+
+def promptSuffix() -> str:
+    return """
 ## Your Task:
 
 Read the blog post webpages referenced by each of these URLs.
