@@ -108,3 +108,13 @@ outdated:
 	@$(MAKE) -C frontend outdated || exit 1
 	@echo "🧹 Checked all components."
 
+
+# List all unused code
+.PHONY: unused
+unused:
+	@echo "❗ Checking backend..."
+	@$(MAKE) -C backend unused || exit 1
+	@echo "🧹 Checking frontend..."
+	@$(MAKE) -C frontend unused || exit 1
+	@echo "🧹 Checked all components."
+

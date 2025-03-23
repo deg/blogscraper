@@ -42,6 +42,12 @@ outdated:
 	poetry show --outdated --top-level
 
 
+# List all unused code
+.PHONY: unused
+unused:
+	poetry run vulture --ignore-decorators "@app.*" src/
+
+
 # List all outdated dependencies (including transitive dependencies)
 .PHONY: outdated-all
 outdated-all:

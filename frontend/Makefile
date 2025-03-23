@@ -9,12 +9,20 @@ install:
 lint:
 	@echo "🚧 No lint yet for frontend"
 
+
 # Clean work product files
 .PHONY: clean
 clean:
 	@echo "🚧 No clean yet for frontend"
 
+
 # List all outdated dependencies (direct dependencies only)
 .PHONY: outdated
 outdated:
+	@echo "🚧 No outdated yet for frontend"
+
+
+# List all unused code
+.PHONY: unused
+unused:
 	@echo "🚧 No outdated yet for frontend"
