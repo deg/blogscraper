@@ -52,11 +52,7 @@ def generate_doc(
         return doc_url
 
     elif format == "Markdown":
-        # - markdown_filename = f"{title.replace(' ', '_')}.md"
-        # - with open(markdown_filename, "w", encoding="utf-8") as md_file:
-        # -     md_file.write(f"# {title}\n\n{document_content}")
-        # - logger.info(f"Created Markdown file: {markdown_filename}")
-        return document_content
+        return f"# {title}\n\n{document_content}"
 
     else:
         raise ValueError(f"Unsupported document format: '{format}'")
