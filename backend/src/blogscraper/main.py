@@ -19,8 +19,6 @@ from fastapi import Depends, FastAPI, HTTPException, Query
 from starlette.middleware.gzip import GZipMiddleware
 
 from blogscraper.tasks import generate_doc, scrape_blogs
-
-# - from blogscraper.ui import confirm_action, console, display_welcome, warnstr
 from blogscraper.utils.mongodb_helpers import (
     close_db,
     filter_posts,
@@ -28,16 +26,6 @@ from blogscraper.utils.mongodb_helpers import (
     post_sources,
     the_db,
 )
-
-# -     delete_unneeded_docs,
-# -     display_blogs,
-# -     filter_urls_by_date_range,
-# -     generate_llm_prompt,
-# -     list_urls,
-# -     scrape_blogs,
-
-
-# - from blogscraper.utils.storage import load_stored_urls
 
 APP_NAME = "Blog Scraper"
 APP_DESCRIPTION = "Summarize interesting recent AI blog posts"
@@ -118,7 +106,6 @@ async def _run_scrape(task_id: str) -> None:
         await asyncio.to_thread(
             scrape_blogs,
             do_all=True,
-            erase_old=False,
             status_callback=status_callback,
         )
         scrape_tasks[task_id] = "completed"
@@ -200,21 +187,6 @@ async def markdown_from_documents(query: FilterRangeQuery = Depends()) -> str:
 
 
 # - def main() -> None:
-# -     """Starts the Blogscraper CLI and handles user interactions."""
-# -     display_welcome()
-# -
-# -     all_urls = []
-# -     if confirm_action("Scrape websites for new URLs?"):
-# -         erase_old = confirm_action("Erase old DB and start fresh?", default=False)
-# -         all_urls = scrape_blogs(do_all=False, erase_old=erase_old, posts_coll=None)
-# -     else:
-# -         all_urls = load_stored_urls()
-# -
-# -     ranged_urls, start_day, end_day = filter_urls_by_date_range(all_urls)
-# -     if not ranged_urls:
-# -         console.print(warnstr("No posts in the selected time period."))
-# -         return
-# -
 # -     if confirm_action("Display contents of selected blogs?"):
 # -         display_blogs(ranged_urls)
 # -

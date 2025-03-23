@@ -24,14 +24,6 @@ logger = setup_logger(__name__)
 # pylint: disable=logging-format-interpolation
 
 
-# - class BlogPost(BaseModel):
-# -     url: HttpUrl
-# -     source: str
-# -     content: str
-# -     creation_timestamp: datetime
-# -     harvest_timestamp: datetime
-BlogPost = URLDict
-
 PostCollection = Collection[dict[str, object]]
 
 
