@@ -7,6 +7,7 @@ install:
 # Generate API client from OpenAPI spec
 .PHONY: gen-api
 gen-api:
+	curl -s http://localhost:8000/openapi.json | jq . > openapi/schema.json
 	yarn orval --config openapi/orval.config.ts
 
 

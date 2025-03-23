@@ -1,14 +1,45 @@
 import { Button, message, Typography } from 'antd'
-import { useStartScrapeScrapePost } from '../api/orval'
+import { useState } from 'react'
+import {
+  useStartScrapeScrapePost,
+  useScrapeStatusScrapeStatusTaskIdGet,
+} from '../api/orval'
 
-const { Title } = Typography
+const { Title, Paragraph } = Typography
+
+const ScrapeStatus = ({ taskId }: { taskId: string }) => {
+  const {
+    data: status,
+    isLoading: isStatusLoading,
+  } = useScrapeStatusScrapeStatusTaskIdGet(
+    { pathParams: { task_id: taskId } },
+    { refetchInterval: 2000 }
+  )
+
+  return (
+    <Paragraph style={{ marginTop: 24 }}>
+      Status for task <code>{taskId}</code>:{' '}
+      {isStatusLoading ? 'Loading…' : JSON.stringify(status)}
+    </Paragraph>
+  )
+}
 
 const ScrapePage = () => {
-  const { mutate: startScrape, isLoading } = useStartScrapeScrapePost()
+  const [taskId, setTaskId] = useState<string | null>(null)
+
+  const { mutate: startScrape, isLoading: isStarting } = useStartScrapeScrapePost()
 
   const handleStart = () => {
     startScrape({}, {
-      onSuccess: () => message.success('Scrape started!'),
+      onSuccess: (res) => {
+        const newTaskId = res?.task_id
+        if (newTaskId) {
+          setTaskId(newTaskId)
+          message.success(`Started scrape task: ${newTaskId}`)
+        } else {
+          message.error('Missing task_id in response')
+        }
+      },
       onError: () => message.error('Failed to start scrape'),
     })
   }
@@ -16,9 +47,11 @@ const ScrapePage = () => {
   return (
     <div>
       <Title level={2}>Scrape Blogs</Title>
-      <Button type="primary" loading={isLoading} onClick={handleStart}>
+      <Button type="primary" loading={isStarting} onClick={handleStart}>
         Start Scrape
       </Button>
+
+      {taskId && <ScrapeStatus taskId={taskId} />}
     </div>
   )
 }

@@ -15,6 +15,7 @@ from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
 from fastapi import Depends, FastAPI, Query
+from pydantic import BaseModel
 from starlette.middleware.gzip import GZipMiddleware
 
 from blogscraper.tasks import generate_doc, generate_llm_prompt, scrape_blogs
@@ -74,7 +75,11 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
-@app.get("/", tags=["API"])
+class _HealthStatus(BaseModel):
+    message: str
+
+
+@app.get("/", response_model=_HealthStatus, tags=["API"])
 def health() -> dict[str, str]:
     """Get server status"""
     return {"message": "Blogscraper is running"}
@@ -84,7 +89,17 @@ def health() -> dict[str, str]:
 scrape_tasks: dict[str, str] = {}
 
 
-@app.post("/scrape", tags=["Scrape"])
+class _ScrapeStarted(BaseModel):
+    task_id: str
+    status: str
+
+
+class _ScrapeStatus(BaseModel):
+    task_id: str
+    status: str
+
+
+@app.post("/scrape", response_model=_ScrapeStarted, tags=["Scrape"])
 async def start_scrape(
     # posts_coll: PostCollection = Depends(get_posts_collection),
 ) -> dict[str, str]:
@@ -114,7 +129,7 @@ async def _run_scrape(task_id: str) -> None:
         logger.warning("Scrape failed")
 
 
-@app.get("/scrape/status/{task_id}", tags=["Scrape"])
+@app.get("/scrape/status/{task_id}", response_model=_ScrapeStatus, tags=["Scrape"])
 async def scrape_status(task_id: str) -> dict[str, str]:
     """Returns the status of a scraping task."""
     return {"task_id": task_id, "status": scrape_tasks.get(task_id, "not found")}

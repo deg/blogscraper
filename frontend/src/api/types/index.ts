@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
+export * from './_healthStatus';
+export * from './_scrapeStarted';
+export * from './_scrapeStatus';
 export * from './deleteGoogleDocDeleteGoogleDocPostParams';
 export * from './gDoc';
 export * from './googleDocFromDocumentsGoogleDocFromDocumentsGetParams';

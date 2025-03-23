@@ -20,11 +20,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Health  Get"
+                  "$ref": "#/components/schemas/_HealthStatus"
                 }
               }
             }
@@ -46,11 +42,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object",
-                  "title": "Response Start Scrape Scrape Post"
+                  "$ref": "#/components/schemas/_ScrapeStarted"
                 }
               }
             }
@@ -83,11 +75,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Scrape Status Scrape Status  Task Id  Get"
+                  "$ref": "#/components/schemas/_ScrapeStatus"
                 }
               }
             }
@@ -692,6 +680,55 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "_HealthStatus": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "_HealthStatus"
+      },
+      "_ScrapeStarted": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status"
+        ],
+        "title": "_ScrapeStarted"
+      },
+      "_ScrapeStatus": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status"
+        ],
+        "title": "_ScrapeStatus"
       }
     }
   },

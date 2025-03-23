@@ -10,9 +10,13 @@ import {
   useQuery
 } from '@tanstack/react-query';
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryFunction,
   QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
   UseMutationResult,
   UseQueryOptions,
@@ -24,13 +28,13 @@ import type {
   GDoc,
   GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams,
   HTTPValidationError,
-  HealthGet200,
   ListDocumentsListDocumentsGetParams,
   LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams,
   MarkdownFromDocumentsMarkdownFromDocumentsGetParams,
-  ScrapeStatusScrapeStatusTaskIdGet200,
   SourcesSourcesGetParams,
-  StartScrapeScrapePost200
+  _HealthStatus,
+  _ScrapeStarted,
+  _ScrapeStatus
 } from './types';
 
 import { customFetch } from './custom-fetch';
@@ -44,7 +48,7 @@ export const healthGet = (
 ) => {
       
       
-      return customFetch<HealthGet200>(
+      return customFetch<_HealthStatus>(
       {url: `/`, method: 'GET', signal
     },
       );
@@ -56,7 +60,7 @@ export const getHealthGetQueryKey = () => {
     }
 
     
-export const getHealthGetQueryOptions = <TData = Awaited<ReturnType<typeof healthGet>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData>, }
+export const getHealthGetQueryOptions = <TData = Awaited<ReturnType<typeof healthGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -71,25 +75,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type HealthGetQueryResult = NonNullable<Awaited<ReturnType<typeof healthGet>>>
 export type HealthGetQueryError = unknown
 
 
+export function useHealthGet<TData = Awaited<ReturnType<typeof healthGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof healthGet>>,
+          TError,
+          Awaited<ReturnType<typeof healthGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealthGet<TData = Awaited<ReturnType<typeof healthGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof healthGet>>,
+          TError,
+          Awaited<ReturnType<typeof healthGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealthGet<TData = Awaited<ReturnType<typeof healthGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Health
  */
 
 export function useHealthGet<TData = Awaited<ReturnType<typeof healthGet>>, TError = unknown>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getHealthGetQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -109,7 +137,7 @@ export const startScrapeScrapePost = (
 ) => {
       
       
-      return customFetch<StartScrapeScrapePost200>(
+      return customFetch<_ScrapeStarted>(
       {url: `/scrape`, method: 'POST', signal
     },
       );
@@ -173,7 +201,7 @@ export const scrapeStatusScrapeStatusTaskIdGet = (
 ) => {
       
       
-      return customFetch<ScrapeStatusScrapeStatusTaskIdGet200>(
+      return customFetch<_ScrapeStatus>(
       {url: `/scrape/status/${taskId}`, method: 'GET', signal
     },
       );
@@ -185,7 +213,7 @@ export const getScrapeStatusScrapeStatusTaskIdGetQueryKey = (taskId: string,) =>
     }
 
     
-export const getScrapeStatusScrapeStatusTaskIdGetQueryOptions = <TData = Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError = HTTPValidationError>(taskId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData>, }
+export const getScrapeStatusScrapeStatusTaskIdGetQueryOptions = <TData = Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError = HTTPValidationError>(taskId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -200,25 +228,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, enabled: !!(taskId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, enabled: !!(taskId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type ScrapeStatusScrapeStatusTaskIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>>
 export type ScrapeStatusScrapeStatusTaskIdGetQueryError = HTTPValidationError
 
 
+export function useScrapeStatusScrapeStatusTaskIdGet<TData = Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError = HTTPValidationError>(
+ taskId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useScrapeStatusScrapeStatusTaskIdGet<TData = Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError = HTTPValidationError>(
+ taskId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useScrapeStatusScrapeStatusTaskIdGet<TData = Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError = HTTPValidationError>(
+ taskId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Scrape Status
  */
 
 export function useScrapeStatusScrapeStatusTaskIdGet<TData = Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError = HTTPValidationError>(
- taskId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData>, }
+ taskId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof scrapeStatusScrapeStatusTaskIdGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getScrapeStatusScrapeStatusTaskIdGetQueryOptions(taskId,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -258,7 +310,7 @@ export const getSourcesSourcesGetQueryKey = (params?: SourcesSourcesGetParams,) 
     }
 
     
-export const getSourcesSourcesGetQueryOptions = <TData = Awaited<ReturnType<typeof sourcesSourcesGet>>, TError = HTTPValidationError>(params?: SourcesSourcesGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData>, }
+export const getSourcesSourcesGetQueryOptions = <TData = Awaited<ReturnType<typeof sourcesSourcesGet>>, TError = HTTPValidationError>(params?: SourcesSourcesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -273,25 +325,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type SourcesSourcesGetQueryResult = NonNullable<Awaited<ReturnType<typeof sourcesSourcesGet>>>
 export type SourcesSourcesGetQueryError = HTTPValidationError
 
 
+export function useSourcesSourcesGet<TData = Awaited<ReturnType<typeof sourcesSourcesGet>>, TError = HTTPValidationError>(
+ params: undefined |  SourcesSourcesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof sourcesSourcesGet>>,
+          TError,
+          Awaited<ReturnType<typeof sourcesSourcesGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSourcesSourcesGet<TData = Awaited<ReturnType<typeof sourcesSourcesGet>>, TError = HTTPValidationError>(
+ params?: SourcesSourcesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof sourcesSourcesGet>>,
+          TError,
+          Awaited<ReturnType<typeof sourcesSourcesGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSourcesSourcesGet<TData = Awaited<ReturnType<typeof sourcesSourcesGet>>, TError = HTTPValidationError>(
+ params?: SourcesSourcesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Sources
  */
 
 export function useSourcesSourcesGet<TData = Awaited<ReturnType<typeof sourcesSourcesGet>>, TError = HTTPValidationError>(
- params?: SourcesSourcesGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData>, }
+ params?: SourcesSourcesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sourcesSourcesGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getSourcesSourcesGetQueryOptions(params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -322,7 +398,7 @@ export const getListGoogleDocsListGoogleDocsGetQueryKey = () => {
     }
 
     
-export const getListGoogleDocsListGoogleDocsGetQueryOptions = <TData = Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError = unknown>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData>, }
+export const getListGoogleDocsListGoogleDocsGetQueryOptions = <TData = Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -337,25 +413,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type ListGoogleDocsListGoogleDocsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>>
 export type ListGoogleDocsListGoogleDocsGetQueryError = unknown
 
 
+export function useListGoogleDocsListGoogleDocsGet<TData = Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListGoogleDocsListGoogleDocsGet<TData = Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListGoogleDocsListGoogleDocsGet<TData = Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List Google Docs
  */
 
 export function useListGoogleDocsListGoogleDocsGet<TData = Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError = unknown>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listGoogleDocsListGoogleDocsGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListGoogleDocsListGoogleDocsGetQueryOptions(options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -451,7 +551,7 @@ export const getListDocumentsListDocumentsGetQueryKey = (params: ListDocumentsLi
     }
 
     
-export const getListDocumentsListDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError = HTTPValidationError>(params: ListDocumentsListDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData>, }
+export const getListDocumentsListDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError = HTTPValidationError>(params: ListDocumentsListDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -466,25 +566,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type ListDocumentsListDocumentsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>>
 export type ListDocumentsListDocumentsGetQueryError = HTTPValidationError
 
 
+export function useListDocumentsListDocumentsGet<TData = Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError = HTTPValidationError>(
+ params: ListDocumentsListDocumentsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDocumentsListDocumentsGet<TData = Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError = HTTPValidationError>(
+ params: ListDocumentsListDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDocumentsListDocumentsGet<TData = Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError = HTTPValidationError>(
+ params: ListDocumentsListDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List Documents
  */
 
 export function useListDocumentsListDocumentsGet<TData = Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError = HTTPValidationError>(
- params: ListDocumentsListDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData>, }
+ params: ListDocumentsListDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDocumentsListDocumentsGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListDocumentsListDocumentsGetQueryOptions(params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -516,7 +640,7 @@ export const getLlmPromptFromDocumentsLlmPromptFromDocumentsGetQueryKey = (param
     }
 
     
-export const getLlmPromptFromDocumentsLlmPromptFromDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError = HTTPValidationError>(params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData>, }
+export const getLlmPromptFromDocumentsLlmPromptFromDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError = HTTPValidationError>(params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -531,25 +655,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type LlmPromptFromDocumentsLlmPromptFromDocumentsGetQueryResult = NonNullable<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>>
 export type LlmPromptFromDocumentsLlmPromptFromDocumentsGetQueryError = HTTPValidationError
 
 
+export function useLlmPromptFromDocumentsLlmPromptFromDocumentsGet<TData = Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLlmPromptFromDocumentsLlmPromptFromDocumentsGet<TData = Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLlmPromptFromDocumentsLlmPromptFromDocumentsGet<TData = Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Llm Prompt From Documents
  */
 
 export function useLlmPromptFromDocumentsLlmPromptFromDocumentsGet<TData = Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError = HTTPValidationError>(
- params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData>, }
+ params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof llmPromptFromDocumentsLlmPromptFromDocumentsGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getLlmPromptFromDocumentsLlmPromptFromDocumentsGetQueryOptions(params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -581,7 +729,7 @@ export const getMarkdownFromDocumentsMarkdownFromDocumentsGetQueryKey = (params:
     }
 
     
-export const getMarkdownFromDocumentsMarkdownFromDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError = HTTPValidationError>(params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData>, }
+export const getMarkdownFromDocumentsMarkdownFromDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError = HTTPValidationError>(params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -596,25 +744,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type MarkdownFromDocumentsMarkdownFromDocumentsGetQueryResult = NonNullable<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>>
 export type MarkdownFromDocumentsMarkdownFromDocumentsGetQueryError = HTTPValidationError
 
 
+export function useMarkdownFromDocumentsMarkdownFromDocumentsGet<TData = Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMarkdownFromDocumentsMarkdownFromDocumentsGet<TData = Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMarkdownFromDocumentsMarkdownFromDocumentsGet<TData = Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Markdown From Documents
  */
 
 export function useMarkdownFromDocumentsMarkdownFromDocumentsGet<TData = Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError = HTTPValidationError>(
- params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData>, }
+ params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof markdownFromDocumentsMarkdownFromDocumentsGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getMarkdownFromDocumentsMarkdownFromDocumentsGetQueryOptions(params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
@@ -646,7 +818,7 @@ export const getGoogleDocFromDocumentsGoogleDocFromDocumentsGetQueryKey = (param
     }
 
     
-export const getGoogleDocFromDocumentsGoogleDocFromDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError = HTTPValidationError>(params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData>, }
+export const getGoogleDocFromDocumentsGoogleDocFromDocumentsGetQueryOptions = <TData = Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError = HTTPValidationError>(params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -661,25 +833,49 @@ const {query: queryOptions} = options ?? {};
 
       
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData> & { queryKey: QueryKey }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
 export type GoogleDocFromDocumentsGoogleDocFromDocumentsGetQueryResult = NonNullable<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>>
 export type GoogleDocFromDocumentsGoogleDocFromDocumentsGetQueryError = HTTPValidationError
 
 
+export function useGoogleDocFromDocumentsGoogleDocFromDocumentsGet<TData = Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGoogleDocFromDocumentsGoogleDocFromDocumentsGet<TData = Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>
+        > , 'initialData'
+      >, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGoogleDocFromDocumentsGoogleDocFromDocumentsGet<TData = Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError = HTTPValidationError>(
+ params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData>>, }
+
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Google Doc From Documents
  */
 
 export function useGoogleDocFromDocumentsGoogleDocFromDocumentsGet<TData = Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError = HTTPValidationError>(
- params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData>, }
+ params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof googleDocFromDocumentsGoogleDocFromDocumentsGet>>, TError, TData>>, }
 
-  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGoogleDocFromDocumentsGoogleDocFromDocumentsGetQueryOptions(params,options)
 
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
   query.queryKey = queryOptions.queryKey ;
 
