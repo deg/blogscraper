@@ -49,14 +49,14 @@ export const healthGet = (
       
       
       return customFetch<_HealthStatus>(
-      {url: `/`, method: 'GET', signal
+      {url: `/api/`, method: 'GET', signal
     },
       );
     }
   
 
 export const getHealthGetQueryKey = () => {
-    return [`/`] as const;
+    return [`/api/`] as const;
     }
 
     
@@ -138,7 +138,7 @@ export const startScrapeScrapePost = (
       
       
       return customFetch<_ScrapeStarted>(
-      {url: `/scrape`, method: 'POST', signal
+      {url: `/api/scrape`, method: 'POST', signal
     },
       );
     }
@@ -202,14 +202,14 @@ export const scrapeStatusScrapeStatusTaskIdGet = (
       
       
       return customFetch<_ScrapeStatus>(
-      {url: `/scrape/status/${taskId}`, method: 'GET', signal
+      {url: `/api/scrape/status/${taskId}`, method: 'GET', signal
     },
       );
     }
   
 
 export const getScrapeStatusScrapeStatusTaskIdGetQueryKey = (taskId: string,) => {
-    return [`/scrape/status/${taskId}`] as const;
+    return [`/api/scrape/status/${taskId}`] as const;
     }
 
     
@@ -298,7 +298,7 @@ export const sourcesSourcesGet = (
       
       
       return customFetch<string[]>(
-      {url: `/sources`, method: 'GET',
+      {url: `/api/sources`, method: 'GET',
         params, signal
     },
       );
@@ -306,7 +306,7 @@ export const sourcesSourcesGet = (
   
 
 export const getSourcesSourcesGetQueryKey = (params?: SourcesSourcesGetParams,) => {
-    return [`/sources`, ...(params ? [params]: [])] as const;
+    return [`/api/sources`, ...(params ? [params]: [])] as const;
     }
 
     
@@ -387,14 +387,14 @@ export const listGoogleDocsListGoogleDocsGet = (
       
       
       return customFetch<GDoc[]>(
-      {url: `/list-google-docs`, method: 'GET', signal
+      {url: `/api/list-google-docs`, method: 'GET', signal
     },
       );
     }
   
 
 export const getListGoogleDocsListGoogleDocsGetQueryKey = () => {
-    return [`/list-google-docs`] as const;
+    return [`/api/list-google-docs`] as const;
     }
 
     
@@ -475,7 +475,7 @@ export const deleteGoogleDocDeleteGoogleDocPost = (
       
       
       return customFetch<boolean>(
-      {url: `/delete-google-doc`, method: 'POST',
+      {url: `/api/delete-google-doc`, method: 'POST',
         params, signal
     },
       );
@@ -539,7 +539,7 @@ export const listDocumentsListDocumentsGet = (
       
       
       return customFetch<string[]>(
-      {url: `/list-documents`, method: 'GET',
+      {url: `/api/list-documents`, method: 'GET',
         params, signal
     },
       );
@@ -547,7 +547,7 @@ export const listDocumentsListDocumentsGet = (
   
 
 export const getListDocumentsListDocumentsGetQueryKey = (params: ListDocumentsListDocumentsGetParams,) => {
-    return [`/list-documents`, ...(params ? [params]: [])] as const;
+    return [`/api/list-documents`, ...(params ? [params]: [])] as const;
     }
 
     
@@ -628,7 +628,7 @@ export const llmPromptFromDocumentsLlmPromptFromDocumentsGet = (
       
       
       return customFetch<string>(
-      {url: `/llm-prompt-from-documents`, method: 'GET',
+      {url: `/api/llm-prompt-from-documents`, method: 'GET',
         params, signal
     },
       );
@@ -636,7 +636,7 @@ export const llmPromptFromDocumentsLlmPromptFromDocumentsGet = (
   
 
 export const getLlmPromptFromDocumentsLlmPromptFromDocumentsGetQueryKey = (params: LlmPromptFromDocumentsLlmPromptFromDocumentsGetParams,) => {
-    return [`/llm-prompt-from-documents`, ...(params ? [params]: [])] as const;
+    return [`/api/llm-prompt-from-documents`, ...(params ? [params]: [])] as const;
     }
 
     
@@ -717,7 +717,7 @@ export const markdownFromDocumentsMarkdownFromDocumentsGet = (
       
       
       return customFetch<string>(
-      {url: `/markdown-from-documents`, method: 'GET',
+      {url: `/api/markdown-from-documents`, method: 'GET',
         params, signal
     },
       );
@@ -725,7 +725,7 @@ export const markdownFromDocumentsMarkdownFromDocumentsGet = (
   
 
 export const getMarkdownFromDocumentsMarkdownFromDocumentsGetQueryKey = (params: MarkdownFromDocumentsMarkdownFromDocumentsGetParams,) => {
-    return [`/markdown-from-documents`, ...(params ? [params]: [])] as const;
+    return [`/api/markdown-from-documents`, ...(params ? [params]: [])] as const;
     }
 
     
@@ -806,7 +806,7 @@ export const googleDocFromDocumentsGoogleDocFromDocumentsGet = (
       
       
       return customFetch<string>(
-      {url: `/google-doc-from-documents`, method: 'GET',
+      {url: `/api/google-doc-from-documents`, method: 'GET',
         params, signal
     },
       );
@@ -814,7 +814,7 @@ export const googleDocFromDocumentsGoogleDocFromDocumentsGet = (
   
 
 export const getGoogleDocFromDocumentsGoogleDocFromDocumentsGetQueryKey = (params: GoogleDocFromDocumentsGoogleDocFromDocumentsGetParams,) => {
-    return [`/google-doc-from-documents`, ...(params ? [params]: [])] as const;
+    return [`/api/google-doc-from-documents`, ...(params ? [params]: [])] as const;
     }
 
     

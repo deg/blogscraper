@@ -4,6 +4,7 @@ export default {
     input: './schema.json',
     output: {
       target: '../src/api/orval.ts',
+      baseUrl: "/api",
       client: 'react-query',
       schemas: '../src/api/types',
       override: {

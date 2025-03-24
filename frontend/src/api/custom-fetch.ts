@@ -1,6 +1,6 @@
 // src/api/custom-fetch.ts
 export const customFetch = async ({ url, method, options }) => {
-  const response = await fetch(`/api${url}`, {
+  const response = await fetch(`${url}`, {
     method,
     ...options,
   })
