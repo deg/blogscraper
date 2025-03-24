@@ -1,5 +1,5 @@
 import { Button, message, Typography } from 'antd'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   useStartScrapeScrapePost,
   useScrapeStatusScrapeStatusTaskIdGet,
@@ -10,13 +10,34 @@ const { Title, Paragraph } = Typography
 const ScrapeStatus = ({ taskId }: { taskId: string }) => {
   const {
     data: status,
-    isLoading: isStatusLoading,
-  } = useScrapeStatusScrapeStatusTaskIdGet(taskId, { refetchInterval: 2000 })
+    isLoading,
+    refetch,
+  } = useScrapeStatusScrapeStatusTaskIdGet(taskId)
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    const shouldContinue = (s?: string) =>
+      s !== 'completed' && !s?.startsWith('failed:')
+
+    if (shouldContinue(status?.status)) {
+      intervalRef.current = setInterval(() => {
+        refetch()
+      }, 500)
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [status?.status, refetch])
 
   return (
     <Paragraph style={{ marginTop: 24 }}>
       Status for task <code>{taskId}</code>:&nbsp;
-      {isStatusLoading ? 'Loading…' : JSON.stringify(status)}
+      {isLoading ? 'Loading…' : JSON.stringify(status)}
     </Paragraph>
   )
 }
