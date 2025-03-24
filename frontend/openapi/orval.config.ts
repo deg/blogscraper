@@ -13,8 +13,5 @@ export default {
         },
       },
     },
-    hooks: {
-      transform: true,
-    },
   },
 }

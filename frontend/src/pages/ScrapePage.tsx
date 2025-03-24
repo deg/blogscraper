@@ -11,14 +11,11 @@ const ScrapeStatus = ({ taskId }: { taskId: string }) => {
   const {
     data: status,
     isLoading: isStatusLoading,
-  } = useScrapeStatusScrapeStatusTaskIdGet(
-    { pathParams: { task_id: taskId } },
-    { refetchInterval: 2000 }
-  )
+  } = useScrapeStatusScrapeStatusTaskIdGet(taskId, { refetchInterval: 2000 })
 
   return (
     <Paragraph style={{ marginTop: 24 }}>
-      Status for task <code>{taskId}</code>:{' '}
+      Status for task <code>{taskId}</code>:&nbsp;
       {isStatusLoading ? 'Loading…' : JSON.stringify(status)}
     </Paragraph>
   )
