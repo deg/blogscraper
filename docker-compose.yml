@@ -1,4 +1,5 @@
 services:
+
   blo_db:
     image: mongo:8.0.4
     container_name: blo_mongodb
@@ -7,15 +8,15 @@ services:
       - ./mongoDB_config:/data/configdb
       - ./mongoDB_backups:/backups
     ports:
-      - "${MONGODB_PORT}:27017"
+      - "${BLO_MONGODB_PORT}:27017"
+
   blo_backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: blogscraper:latest
+    build: ./backend
     container_name: blo_backend
+    env_file:
+     - .env
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-5002}:8000"
     volumes:
       - ./backend/src:/app/src
       - ./data:/app/data
@@ -30,3 +31,37 @@ services:
     ]
     depends_on:
       - blo_db
+
+  blo_frontend:
+    build: ./frontend
+    container_name: blo_frontend
+    ports: ["${BLO_FRONTEND_PORT}:${BLO_FRONTEND_PORT}"]
+    environment:
+      - VITE_PORT=${BLO_FRONTEND_PORT}
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # mount a *separate* empty volume for container-only deps
+    command: ["yarn", "dev", "--host", "--port", "${BLO_FRONTEND_PORT}"]
+    depends_on:
+      - blo_backend
+
+  blo_nginx:
+    image: nginx:alpine
+    container_name: blo_nginx
+    ports:
+      - "${BLO_NGINX_HTTP_PORT}:${BLO_NGINX_HTTP_PORT}"
+    volumes:
+      - ./nginx.template.conf:/etc/nginx/nginx.template.conf:ro
+      - ./nginx_logs:/var/log/nginx
+    environment:
+      - NGINX_PORT=${BLO_NGINX_HTTP_PORT}
+      - FRONTEND_PORT=${BLO_FRONTEND_PORT}
+      - BACKEND_PORT=${BLO_BACKEND_PORT}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "envsubst '$$NGINX_PORT $$FRONTEND_PORT $$BACKEND_PORT' < /etc/nginx/nginx.template.conf > /etc/nginx/nginx.conf && exec nginx -g 'daemon off;'"
+    depends_on:
+      - blo_backend
+      - blo_frontend

@@ -64,7 +64,7 @@ install:
 # Run the docker container
 .PHONY: docker-up
 docker-up:
-	docker compose up --build -d && docker compose logs -f blo_backend
+	docker compose up --build -d && docker compose logs -f blo_backend blo_frontend blo_nginx
 
 
 # Clean the temp docker container
