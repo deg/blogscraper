@@ -5,47 +5,53 @@ import {
   useScrapeStatusScrapeStatusTaskIdGet,
 } from '../api/orval'
 
+import { usePollingUntil } from '../hooks/usePollingUntil'
+
 const { Title, Paragraph } = Typography
 
-const ScrapeStatus = ({ taskId }: { taskId: string }) => {
-  const {
-    data: status,
-    isLoading,
-    refetch,
-  } = useScrapeStatusScrapeStatusTaskIdGet(taskId)
-
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    const shouldContinue = (s?: string) =>
-      s !== 'completed' && !s?.startsWith('failed:')
-
-    if (shouldContinue(status?.status)) {
-      intervalRef.current = setInterval(() => {
-        refetch()
-      }, 500)
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-    }
-  }, [status?.status, refetch])
-
-  return (
-    <Paragraph style={{ marginTop: 24 }}>
-      Status for task <code>{taskId}</code>:&nbsp;
-      {isLoading ? 'Loading…' : JSON.stringify(status)}
-    </Paragraph>
-  )
-}
+const ScrapeStatus = ({
+  taskId,
+  status,
+  isLoading,
+}: {
+  taskId: string
+  status: any
+  isLoading: boolean
+}) => (
+  <Paragraph style={{ marginTop: 24 }}>
+    Status for task <code>{taskId}</code>:&nbsp;
+    {isLoading ? 'Loading…' : JSON.stringify(status)}
+  </Paragraph>
+)
 
 const ScrapePage = () => {
   const [taskId, setTaskId] = useState<string | null>(null)
 
+  const {
+    data: status,
+    isLoading: isStatusLoading,
+    refetch,
+  } = useScrapeStatusScrapeStatusTaskIdGet(taskId!, {
+    enabled: !!taskId,
+  })
+
   const { mutate: startScrape, isLoading: isStarting } = useStartScrapeScrapePost()
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  usePollingUntil({
+    shouldContinue: () =>
+      !!taskId &&
+      status?.status !== 'completed' &&
+      !status?.status?.startsWith('failed:'),
+    action: () => refetch(),
+    delay: 500,
+    deps: [taskId, status?.status, refetch],
+  })
+
+
+  const isRunning =
+    status?.status && status.status !== 'completed' && !status.status.startsWith('failed:')
 
   const handleStart = () => {
     startScrape({}, {
@@ -65,11 +71,22 @@ const ScrapePage = () => {
   return (
     <div>
       <Title level={2}>Scrape Blogs</Title>
-      <Button type="primary" loading={isStarting} onClick={handleStart}>
+      <Button
+        type="primary"
+        loading={isStarting}
+        disabled={isStarting || isRunning}
+        onClick={handleStart}
+      >
         Start Scrape
       </Button>
 
-      {taskId && <ScrapeStatus taskId={taskId} />}
+      {taskId && (
+        <ScrapeStatus
+          taskId={taskId}
+          status={status}
+          isLoading={isStatusLoading}
+        />
+      )}
     </div>
   )
 }
