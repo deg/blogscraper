@@ -7,7 +7,7 @@ install:
 # Generate API client from OpenAPI spec
 .PHONY: gen-api
 gen-api:
-	curl -s http://localhost:8000/openapi.json | jq . > openapi/schema.json
+	curl -s http://localhost:5002/openapi.json | jq . > openapi/schema.json
 	yarn orval --config openapi/orval.config.ts
 
 
@@ -26,7 +26,7 @@ clean:
 # List all outdated dependencies (direct dependencies only)
 .PHONY: outdated
 outdated:
-	@echo "🚧 No outdated yet for frontend"
+	yarn outdated
 
 
 # List all unused code
