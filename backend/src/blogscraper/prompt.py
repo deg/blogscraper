@@ -16,31 +16,51 @@ from blogscraper.types import FilterRangeQuery
 
 
 def promptPrefix(query: FilterRangeQuery) -> str:
-    regex_phrase = ""
     if query.match_string:
-        regex_phrase = (
-            ", and containing text matching the "
-            f"regular expression <<<{query.match_string}>>>"
+        context_phrase = (
+            f"containing stories including some with text matching regex《{query.match_string}》. "
+            "I am only interested in those stories. Ignore other stories in these pages"
         )
+    else:
+        context_phrase = "focused on AI and software development"
     return f"""
-# Summarize Recent AI and Software Development Blog Posts
+# MISSION: SUMMARIZE ARTICLES FROM THE WEB
 
-Here are some very recent blog posts, focused on AI and software development. Each of these posts typically discusses multiple current stories in great detail.
+Here are links to some recent blog posts from {query.start_date} through {query.end_date}, {context_phrase}. Each of these posts typically discusses multiple current stories in great detail.
 
-I chose these posts from the time period {query.start_date} through {query.end_date}{regex_phrase}.
+## URLs of articles to read from the Web
 """
 
 
-def promptSuffix() -> str:
-    return """
+def promptSuffix(query: FilterRangeQuery) -> str:
+    if query.match_string:
+        context_phrase1 = (
+            f" Find the stories about 《{query.match_string}》. Ignore any other stories "
+            "in these articles. Also ignore anything that is not mentioned directly and "
+            "explicitly in at least one of these articles. Select only stories  about "
+            f"《{query.match_string}》 that are in the web pages I'm giving you."
+        )
+        context_phrase2 = (
+            "Select only the relevant stories. Remember that our topic "
+            f"is 《{query.match_string}》."
+        )
+    else:
+        context_phrase1 = (
+            "Find the most important stories in each of these posts.\n\n"
+            "Create a **comprehensive report** aimed at **software practitioners**. "
+            "Focus on the ten to twenty most compelling stories."
+        )
+        context_phrase2 = (
+            "Select the most compelling stories. Combine them into one "
+            f"or more consistent and accurate narrative about 《{query.match_string}》."
+        )
+
+    return f"""
 ## Your Task:
 
 Read the blog post webpages referenced by each of these URLs.
 
-Find the most important stories in each of these posts.
-
-Create a **comprehensive report** aimed at **software practitioners**. Focus on the ten
-to twenty most compelling stories.
+{context_phrase1}
 
 
 ## Workflow & Requirements:
@@ -52,10 +72,11 @@ Use your web-browsing capabilities to read each of these web pages. You must rea
 2. **Extract & Organize Stories**
 
    - Identify and extract multiple **distinct stories, insights, or notable points** from each post.
+   - Prove that you have actually read the web page contents by including some interesting direct quotes.
 
 3. **Write the Report**
 
-   - Select the most compelling stories.
+   - {context_phrase2}
    - For each selected story:
      - Create a one-paragraph **summary** of its key points.
      - **Immediately** follow the summary with the **title of the source blog post** and its **URL** in parentheses.

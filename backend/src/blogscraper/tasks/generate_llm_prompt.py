@@ -16,7 +16,7 @@ def generate_llm_prompt(query: FilterRangeQuery) -> str:
     return (
         f"{promptPrefix(query)}\n\n"
         f"{generate_title_list(posts)}\n\n"
-        f"{promptSuffix()}"
+        f"{promptSuffix(query)}"
     )
 
 
