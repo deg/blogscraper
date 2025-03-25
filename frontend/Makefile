@@ -1,7 +1,7 @@
 # Install dependencies
 .PHONY: install
 install:
-	@echo "🚧 No install yet for frontend"
+	yarn install
 
 
 # Generate API client from OpenAPI spec
