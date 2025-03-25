@@ -14,7 +14,7 @@ const App = () => (
       <Header>
         <Menu theme="dark" mode="horizontal" items={[
             { key: 'export', label: <Link to="/">Query/Export</Link> },
-            { key: 'docs', label: <Link to="/docs">Google managment</Link> },
+            { key: 'docs', label: <Link to="/docs">Google Docs Managment</Link> },
             { key: 'scrape', label: <Link to="/scrape">Scrape</Link> },
           ]}>
         </Menu>

@@ -169,7 +169,7 @@ def delete_service_account_doc(doc_id: str, name: str) -> bool:
     """
     try:
         DRIVE_SERVICE.files().delete(fileId=doc_id).execute()
-        logger.info(f"✅ Successfully deleted '{name}'")
+        logger.info(f"🗑️ Successfully deleted '{name}'")
         return True
     except Exception as e:
         logger.warning(f"❌ Failed to delete '{name}' (ID: {doc_id}): {e}")
