@@ -27,17 +27,21 @@ const DocsPage = () => {
     loadDocs();
   }, []);
 
-  const confirmDelete = async (id: string, name: string) => {
-    const confirmed = window.confirm(`Delete ${name}?`);
-    if (!confirmed) return;
-
-    try {
-      await deleteGoogleDocDeleteGoogleDocPost({ doc_id: id, name });
-      message.success(`Deleted ${name}`);
-      await loadDocs();
-    } catch {
-      message.error("Failed to delete document");
-    }
+  const confirmDelete = (id: string, name: string) => {
+    Modal.confirm({
+      title: `Delete ${name}?`,
+      okText: "Yes",
+      cancelText: "No",
+      onOk: async () => {
+        try {
+          await deleteGoogleDocDeleteGoogleDocPost({ doc_id: id, name });
+          message.success(`Deleted ${name}`);
+          await loadDocs();
+        } catch {
+          message.error("Failed to delete document");
+        }
+      },
+    });
   };
 
   const columns = [
