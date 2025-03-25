@@ -13,8 +13,8 @@ const App = () => (
     <Layout style={{ minHeight: '100vh' }}>
       <Header>
         <Menu theme="dark" mode="horizontal" items={[
-            { key: 'export', label: <Link to="/">Export</Link> },
-            { key: 'docs', label: <Link to="/docs">Docs</Link> },
+            { key: 'export', label: <Link to="/">Query/Export</Link> },
+            { key: 'docs', label: <Link to="/docs">Google managment</Link> },
             { key: 'scrape', label: <Link to="/scrape">Scrape</Link> },
           ]}>
         </Menu>
