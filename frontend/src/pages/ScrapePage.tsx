@@ -1,7 +1,7 @@
-import { Button, message, Typography } from 'antd'
+import { Alert, Button, Input, message, Typography } from 'antd'
 import { useEffect, useRef, useState } from 'react'
 import {
-  useStartScrapeScrapePost,
+  useStartScrapeScrapeAuthCodePost,
   useScrapeStatusScrapeStatusTaskIdGet,
 } from '../api/orval'
 
@@ -25,7 +25,10 @@ const ScrapeStatus = ({
 )
 
 const ScrapePage = () => {
+  const [authCode, setAuthCode] = useState('')
   const [taskId, setTaskId] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
 
   const {
     data: status,
@@ -35,7 +38,7 @@ const ScrapePage = () => {
     enabled: !!taskId,
   })
 
-  const { mutate: startScrape, isLoading: isStarting } = useStartScrapeScrapePost()
+  const { mutate: startScrape, isLoading: isStarting } = useStartScrapeScrapeAuthCodePost()
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -43,34 +46,52 @@ const ScrapePage = () => {
     shouldContinue: () =>
       !!taskId &&
       status?.status !== 'completed' &&
+      status?.status !== 'not found' &&
       !status?.status?.startsWith('failed:'),
     action: () => refetch(),
     delay: 500,
     deps: [taskId, status?.status, refetch],
   })
 
-
   const isRunning =
     status?.status && status.status !== 'completed' && !status.status.startsWith('failed:')
 
   const handleStart = () => {
-    startScrape({}, {
+    startScrape({authCode}, {
       onSuccess: (res) => {
+        const failure = res?.detail
         const newTaskId = res?.task_id
-        if (newTaskId) {
+        if (failure) {
+          setErrorMsg(`Incorrect auth code (${failure})`)}
+        else if (newTaskId) {
           setTaskId(newTaskId)
-          message.success(`Started scrape task: ${newTaskId}`)
+          console.log(`Started scrape task: ${newTaskId}`)
         } else {
-          message.error('Missing task_id in response')
+          console.error('Missing task_id in response')
         }
       },
-      onError: () => message.error('Failed to start scrape'),
+      onError: (err: any) => {
+        const msg = err?.response?.data?.detail || 'Failed to start scrape'
+        console.error(msg)
+      },
     })
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (errorMsg) setErrorMsg(null)
+    setAuthCode(e.target.value)
   }
 
   return (
     <div>
       <Title level={2}>Scrape Blogs</Title>
+      <Input.Password
+        placeholder="Enter authorization code"
+        value={authCode}
+        disabled={isStarting || isRunning}
+        onChange={handleChange}
+        style={{ width: 300, marginBottom: 12 }}
+      />
       <Button
         type="primary"
         loading={isStarting}
@@ -87,6 +108,15 @@ const ScrapePage = () => {
           isLoading={isStatusLoading}
         />
       )}
+      {errorMsg && (
+        <Alert
+          message={errorMsg}
+          type="warning"
+          showIcon
+          style={{ marginTop: 16 }}
+        />
+)}
+
     </div>
   )
 }

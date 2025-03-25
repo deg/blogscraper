@@ -28,14 +28,25 @@
         }
       }
     },
-    "/scrape": {
+    "/scrape/{auth_code}": {
       "post": {
         "tags": [
           "Scrape"
         ],
         "summary": "Start Scrape",
         "description": "Starts scraping in an async background task.",
-        "operationId": "start_scrape_scrape_post",
+        "operationId": "start_scrape_scrape__auth_code__post",
+        "parameters": [
+          {
+            "name": "auth_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Auth Code"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -43,6 +54,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/_ScrapeStarted"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }

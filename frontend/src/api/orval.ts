@@ -131,25 +131,25 @@ export function useHealthGet<TData = Awaited<ReturnType<typeof healthGet>>, TErr
  * Starts scraping in an async background task.
  * @summary Start Scrape
  */
-export const startScrapeScrapePost = (
-    
+export const startScrapeScrapeAuthCodePost = (
+    authCode: string,
  signal?: AbortSignal
 ) => {
       
       
       return customFetch<_ScrapeStarted>(
-      {url: `/api/scrape`, method: 'POST', signal
+      {url: `/api/scrape/${authCode}`, method: 'POST', signal
     },
       );
     }
   
 
 
-export const getStartScrapeScrapePostMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startScrapeScrapePost>>, TError,void, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof startScrapeScrapePost>>, TError,void, TContext> => {
+export const getStartScrapeScrapeAuthCodePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startScrapeScrapeAuthCodePost>>, TError,{authCode: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof startScrapeScrapeAuthCodePost>>, TError,{authCode: string}, TContext> => {
     
-const mutationKey = ['startScrapeScrapePost'];
+const mutationKey = ['startScrapeScrapeAuthCodePost'];
 const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -159,10 +159,10 @@ const {mutation: mutationOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startScrapeScrapePost>>, void> = () => {
-          
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startScrapeScrapeAuthCodePost>>, {authCode: string}> = (props) => {
+          const {authCode} = props ?? {};
 
-          return  startScrapeScrapePost()
+          return  startScrapeScrapeAuthCodePost(authCode,)
         }
 
         
@@ -170,23 +170,23 @@ const {mutation: mutationOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type StartScrapeScrapePostMutationResult = NonNullable<Awaited<ReturnType<typeof startScrapeScrapePost>>>
+    export type StartScrapeScrapeAuthCodePostMutationResult = NonNullable<Awaited<ReturnType<typeof startScrapeScrapeAuthCodePost>>>
     
-    export type StartScrapeScrapePostMutationError = unknown
+    export type StartScrapeScrapeAuthCodePostMutationError = HTTPValidationError
 
     /**
  * @summary Start Scrape
  */
-export const useStartScrapeScrapePost = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startScrapeScrapePost>>, TError,void, TContext>, }
+export const useStartScrapeScrapeAuthCodePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startScrapeScrapeAuthCodePost>>, TError,{authCode: string}, TContext>, }
 ): UseMutationResult<
-        Awaited<ReturnType<typeof startScrapeScrapePost>>,
+        Awaited<ReturnType<typeof startScrapeScrapeAuthCodePost>>,
         TError,
-        void,
+        {authCode: string},
         TContext
       > => {
 
-      const mutationOptions = getStartScrapeScrapePostMutationOptions(options);
+      const mutationOptions = getStartScrapeScrapeAuthCodePostMutationOptions(options);
 
       return useMutation(mutationOptions);
     }

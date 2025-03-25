@@ -9,6 +9,7 @@
 export * from './_healthStatus';
 export * from './_scrapeStarted';
 export * from './_scrapeStatus';
+export * from './bodyStartScrapeScrapePost';
 export * from './deleteGoogleDocDeleteGoogleDocPostParams';
 export * from './gDoc';
 export * from './googleDocFromDocumentsGoogleDocFromDocumentsGetParams';
@@ -20,5 +21,6 @@ export * from './markdownFromDocumentsMarkdownFromDocumentsGetParams';
 export * from './scrapeStatusScrapeStatusTaskIdGet200';
 export * from './sourcesSourcesGetParams';
 export * from './startScrapeScrapePost200';
+export * from './startScrapeScrapePostParams';
 export * from './validationError';
 export * from './validationErrorLocItem';

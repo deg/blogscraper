@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from degel_python_utils import appEnv, setup_logger
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from starlette.middleware.gzip import GZipMiddleware
 
@@ -46,6 +46,7 @@ async def server_lifespan(_: FastAPI) -> AsyncIterator[None]:
     appEnv.register_env_var("BACKEND_PORT")
     appEnv.register_env_var("MONGODB_PORT")
     appEnv.register_env_var("GOOGLE_SERVICE_ACCOUNT_FILE", private=True)
+    appEnv.register_env_var("SCRAPE_AUTH_CODE")
     appEnv.show_env()
 
     init_db()
@@ -99,11 +100,17 @@ class _ScrapeStatus(BaseModel):
     status: str
 
 
-@app.post("/scrape", response_model=_ScrapeStarted, tags=["Scrape"])
+# [TODO] auth_code should really not be the URL, for obvious security reasons. But I
+# can't figure out yet how to make it work with Orval.
+@app.post("/scrape/{auth_code}", response_model=_ScrapeStarted, tags=["Scrape"])
 async def start_scrape(
+    auth_code: str,
     # posts_coll: PostCollection = Depends(get_posts_collection),
 ) -> dict[str, str]:
     """Starts scraping in an async background task."""
+    if auth_code != appEnv.get_env_var("SCRAPE_AUTH_CODE"):
+        raise HTTPException(status_code=403, detail="Incorrect authorization code")
+
     task_id = str(len(scrape_tasks) + 1)
     scrape_tasks[task_id] = "queued"
 
