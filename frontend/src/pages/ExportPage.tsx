@@ -65,13 +65,13 @@ const ExportPage = () => {
 
   return (
     <>
-    <MarkdownViewer markdown={helpText} />
     <Card title="Export">
       <ExportSelect selected={selected} onChange={setSelected} />
       <div style={{ marginTop: 24 }}>
         {selected && <ExportRunner selected={selected} />}
       </div>
     </Card>
+    <MarkdownViewer markdown={helpText} />
     </>
   )
 }

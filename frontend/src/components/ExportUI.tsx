@@ -53,12 +53,12 @@ const ExportUI = ({
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    navigator.clipboard.writeText(data);
     message.success("Copied to clipboard");
   };
 
   const handleDownload = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
+    const blob = new Blob([data], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
@@ -96,7 +96,23 @@ const ExportUI = ({
       {data && (
         <>
           <Title level={5}>Result:</Title>
-          <pre>{JSON.stringify(data, null, 2)}</pre>
+          <Space>
+            <Button icon={<CopyOutlined />} onClick={handleCopy}>
+              Copy
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleDownload}>
+              Download
+            </Button>
+          </Space>
+          <div
+            style={{
+              fontFamily: "monospace",
+              whiteSpace: "pre-wrap",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {String(data)}
+          </div>
           <Space>
             <Button icon={<CopyOutlined />} onClick={handleCopy}>
               Copy
