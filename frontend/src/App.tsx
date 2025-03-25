@@ -13,18 +13,18 @@ const App = () => (
     <Layout style={{ minHeight: '100vh' }}>
       <Header>
         <Menu theme="dark" mode="horizontal" items={[
-            { key: 'scrape', label: <Link to="/">Scrape</Link> },
+            { key: 'export', label: <Link to="/">Export</Link> },
             { key: 'docs', label: <Link to="/docs">Docs</Link> },
-            { key: 'export', label: <Link to="/export">Export</Link> },
+            { key: 'scrape', label: <Link to="/scrape">Scrape</Link> },
           ]}>
         </Menu>
       </Header>
       <Content style={{ padding: '24px' }}>
         <PageContainer>
           <Routes>
-            <Route path="/" element={<ScrapePage />} />
+            <Route path="/" element={<ExportPage />} />
             <Route path="/docs" element={<DocsPage />} />
-            <Route path="/export" element={<ExportPage />} />
+            <Route path="/scrape" element={<ScrapePage />} />
           </Routes>
         </PageContainer>
       </Content>
