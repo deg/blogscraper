@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Alert, Button, Input, message, Typography } from "antd";
+import React, { useState } from "react";
+import { Alert, Button, Input, Typography } from "antd";
 import {
   useStartScrapeScrapeAuthCodePost,
   useScrapeStatusScrapeStatusTaskIdGet,
@@ -8,7 +8,7 @@ import {
 import { usePollingUntil } from "../hooks/usePollingUntil";
 import MarkdownViewer from "../components/MarkdownViewer";
 
-const { Title, Paragraph } = Typography;
+const { Paragraph } = Typography;
 
 const ScrapeStatus = ({
   taskId,
@@ -41,8 +41,6 @@ const ScrapePage = () => {
   const { mutate: startScrape, isLoading: isStarting } =
     useStartScrapeScrapeAuthCodePost();
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
   usePollingUntil({
     shouldContinue: () =>
       !!taskId &&
@@ -50,7 +48,7 @@ const ScrapePage = () => {
       status?.status !== "not found" &&
       !status?.status?.startsWith("failed:"),
     action: () => refetch(),
-    delay: 500,
+    delay: 2000,
     deps: [taskId, status?.status, refetch],
   });
 
