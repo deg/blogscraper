@@ -24,6 +24,7 @@ dependencies = [
   "requests==2.32.3",
   "trafilatura==2.0.0",
   "dacite==1.9.2",
+  "playwright==1.51.0",
 ]
 
 [tool.poetry.dependencies]

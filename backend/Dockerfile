@@ -4,8 +4,15 @@ FROM python:3.11-slim AS base
 # Set the working directory inside the container
 WORKDIR /app
 
+# Install Playwright system dependencies
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN apt-get update && apt-get install -y \
+    libnss3 libatk-bridge2.0-0 libxss1 libasound2 libxcomposite1 libxrandr2 libgtk-3-0 libgbm1 \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
 # Install Poetry (matching version from local system)
-RUN pip install --no-cache-dir poetry==2.0.1
+RUN pip install --no-cache-dir poetry==2.1.1
 
 # Copy only the dependency files first to optimize caching
 #- COPY pyproject.toml poetry.lock README.md ./
@@ -16,6 +23,9 @@ RUN poetry config virtualenvs.in-project true
 
 # Ensure Poetry detects the project correctly
 RUN poetry install --no-interaction --no-ansi --no-root
+
+# Finish Playwright setup
+RUN poetry run playwright install chromium
 
 # Copy the remaining project files
 COPY . .

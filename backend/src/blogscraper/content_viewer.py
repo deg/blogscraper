@@ -8,9 +8,12 @@ Usage:
     URLs and format it readably.
 """
 
+import asyncio
+
 import requests
 import trafilatura
 from degel_python_utils import setup_logger
+from playwright.async_api import async_playwright
 
 logger = setup_logger(__name__)
 
@@ -41,29 +44,46 @@ def fetch_page_content(url: str) -> str | None:
     try:
         # Fetch the page HTML
         downloaded = trafilatura.fetch_url(url)
-        if not downloaded:
-            return None
+        main_content = extract_content(downloaded) if downloaded else None
 
-        # Extract main content
-        main_content = trafilatura.extract(
-            downloaded,
-            favor_recall=True,
-            include_formatting=True,
-            include_images=True,
-            include_links=True,
-            include_tables=True,
-            output_format="markdown",
-            with_metadata=True,
-            date_extraction_params={
-                "max_date": "2029-12-31",
-                "outputformat": "%Y-%m-%d %H:%M %z",
-            },
-        )
-        return main_content if main_content else None
+        if main_content:
+            return main_content
+
+        logger.minor(f"🌀 Falling back to Playwright for {url}")
+        return asyncio.run(fetch_rendered_and_extract(url))
 
     except requests.RequestException as e:
         logger.warning(f"Failed to fetch {url}: {e}")
         return None
+
+
+async def fetch_rendered_and_extract(url: str) -> str | None:
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        try:
+            await page.goto(url, timeout=30000)
+            html = await page.content()
+        finally:
+            await browser.close()
+    return extract_content(html)
+
+
+def extract_content(html: str) -> str | None:
+    return trafilatura.extract(
+        html,
+        favor_recall=True,
+        include_formatting=True,
+        include_images=True,
+        include_links=True,
+        include_tables=True,
+        output_format="markdown",
+        with_metadata=True,
+        date_extraction_params={
+            "max_date": "2029-12-31",
+            "outputformat": "%Y-%m-%d %H:%M %z",
+        },
+    )
 
 
 def format_page_content(url: str, content: str | None) -> str:

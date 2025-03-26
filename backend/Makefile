@@ -3,6 +3,7 @@
 install:
 	poetry update
 	poetry install --extras dev
+	poetry run playwright install
 
 
 # Run the application
