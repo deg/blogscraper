@@ -77,6 +77,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 class _HealthStatus(BaseModel):
+    # [TODO] Should return db contents size, number of bad urls, etc.
     message: str
 
 
@@ -133,7 +134,7 @@ async def _run_scrape(task_id: str) -> None:
         logger.major("Scrape completed")
     except Exception as e:
         scrape_tasks[task_id] = f"failed: {str(e)}"
-        logger.warning("Scrape failed")
+        logger.warning(f"Scrape failed, {e}")
 
 
 @app.get("/scrape/status/{task_id}", response_model=_ScrapeStatus, tags=["Scrape"])

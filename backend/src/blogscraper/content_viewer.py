@@ -53,20 +53,34 @@ def fetch_page_content(url: str) -> str | None:
         return asyncio.run(fetch_rendered_and_extract(url))
 
     except requests.RequestException as e:
-        logger.warning(f"Failed to fetch {url}: {e}")
+        logger.warning(f"🔥 Failed to fetch {url!r}: {e}")
         return None
 
 
 async def fetch_rendered_and_extract(url: str) -> str | None:
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        try:
-            await page.goto(url, timeout=30000)
-            html = await page.content()
-        finally:
-            await browser.close()
-    return extract_content(html)
+    try:
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            page = await browser.new_page()
+            try:
+                response = await page.goto(
+                    url, wait_until="domcontentloaded", timeout=10000
+                )
+                if response and "text/html" not in response.headers.get(
+                    "content-type", ""
+                ):
+                    logger.warning(
+                        f"💥 Non-HTML content at {url!r}: "
+                        f"{response.headers.get('content-type')}"
+                    )
+                    return None
+                html = await page.content()
+                return extract_content(html)
+            finally:
+                await browser.close()
+    except Exception as e:
+        logger.warning(f"🔥 Playwright failed to fetch {url!r}: {e}")
+        return None
 
 
 def extract_content(html: str) -> str | None:

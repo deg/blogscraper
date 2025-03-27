@@ -55,6 +55,7 @@ const ScrapePage = () => {
   const isRunning =
     status?.status &&
     status.status !== "completed" &&
+    status.status !== "not found" &&
     !status.status.startsWith("failed:");
 
   const handleStart = () => {
