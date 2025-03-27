@@ -4,8 +4,6 @@ ACTION="${1:?Usage: $0 <start|stop|disable|remove|restart|status> <service-name>
 SERVICE="${2:?Missing service name}"
 DOMAIN="${3:-}"
 PORT="${4:-}"
-USER_NAME="ubuntu"
-WORK_DIR="$(pwd)"
 UNIT_FILE="/etc/systemd/system/${SERVICE}.service"
 
 start_or_install() {
@@ -24,9 +22,9 @@ After=network.target
 
 [Service]
 ExecStart=/usr/bin/caddy reverse-proxy --from $DOMAIN --to :$PORT
-WorkingDirectory=$WORK_DIR
+Environment="HOME=/var/lib/caddy"
+WorkingDirectory=/var/lib/caddy
 Restart=always
-User=$USER_NAME
 
 [Install]
 WantedBy=multi-user.target

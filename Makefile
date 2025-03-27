@@ -77,22 +77,19 @@ docker-down:
 .PHONY: server-up
 server-up:
 	./caddy-mgr.sh start BlogScraper-proxy ai.degel.com 9002
-	./caddy-mgr.sh status BlogScraper-proxy
 	make docker-up
 
 
 # Stop the server
 .PHONY: server-down
 server-down:
-	./caddy-mgr.sh stop BlogScraper-proxy
-	./caddy-mgr.sh status BlogScraper-proxy
 	make docker-down
+	./caddy-mgr.sh stop BlogScraper-proxy
 
 
 # Tear down the Caddy configuration. (Does not uninstall Caddy)
 .PHONY: remove-caddy
 remove-caddy:
-	./caddy-mgr.sh status BlogScraper-proxy
 	./caddy-mgr.sh remove BlogScraper-proxy
 
 
