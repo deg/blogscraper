@@ -76,24 +76,24 @@ docker-down:
 # Run the docker container in the cloud config ([TODO] Should be production, .env, etc.)
 .PHONY: server-up
 server-up:
-	./caddy-mgr start BlogScraper-proxy ai.degel.com 9002
-	./caddy-mgr status BlogScraper-proxy
+	./caddy-mgr.sh start BlogScraper-proxy ai.degel.com 9002
+	./caddy-mgr.sh status BlogScraper-proxy
 	make docker-up
 
 
 # Stop the server
 .PHONY: server-down
 server-down:
-	./caddy-mgr stop BlogScraper-proxy
-	./caddy-mgr status BlogScraper-proxy
+	./caddy-mgr.sh stop BlogScraper-proxy
+	./caddy-mgr.sh status BlogScraper-proxy
 	make docker-down
 
 
 # Tear down the Caddy configuration. (Does not uninstall Caddy)
 .PHONY: remove-caddy
 remove-caddy:
-	./caddy-mgr status BlogScraper-proxy
-	./caddy-mgr remove BlogScraper-proxy
+	./caddy-mgr.sh status BlogScraper-proxy
+	./caddy-mgr.sh remove BlogScraper-proxy
 
 
 # Run the backend
